@@ -224,22 +224,46 @@ c_imKlint2 = wrap_for_numba(imKlint2)
 def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=False):
     """Calculate the Kl integral over energy. Kl = K*mfp**2 where K is the Kernel from Poppel.
 
-    Arguments:
+    Parameters
+    ----------
+    tr : float
+        Reduced temperature tr = T/Tc.
 
-        tr is reduced temperature T/Tc
-        fr is reduced frequency h*f/delta0
-        x is q*mfp where mfp is mean-free-path
-        x0 is mfp/ksi0 where ksi0 is pippard coherence length
-        x1 is mfp/L0 where L0 is the London penetration depth at T=0
-        dr is reduced BCS energy gap delta(T)/delta0
+    fr : float
+        Reduced frequency fr = h*f/delta0
 
-    Keyword Arguments:
+    x : float
+        Reduced momentum x = q*mfp where mfp is mean-free-path and q is the
+        coordinate resulting from a fourier transform of position.
 
-        'verbose' (True or False)
-            prints out values and stuff
+    x0 : float
+        Inverse reduced BCS coherence length x0 = mfp/ksi0, where ksi0 is BCS
+        coherence length and mfp is mean free path.
 
-    Returns:
-        reKl+1j*imKl"""
+    x1 : float
+        Inverse reduced London penetration depth x1 = mfp/L0 where L0 is the
+        London penetration depth at T=0 and mfp is mean free path.
+
+    dr : float
+        Reduced BCS energy gap dr = delta(T)/delta(T=0) where delta is the
+        superconducting energy gap.
+
+    Keyword Arguments
+    -----------------
+    verbose : bool
+        Default is False. Prints some helpful debugging stuff. Very much a work
+        in progress.
+
+    Returns
+    -------
+    Kl : complex float
+        Kl = K*mfp^2 where K is the complex Mattis-Bardeen Kernel as a function
+        of x = q*mfp, mfp is the mean free path and q is the
+        coordinate resulting from a fourier transform of position.
+
+    Note
+    ----
+    See Pöpel (1989) or Gao (2008)."""
 
 
     #Hackish way to make sure there are no divide by zero errors.

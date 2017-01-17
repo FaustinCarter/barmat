@@ -4,9 +4,23 @@ import numpy as np
 import math as ma
 
 def deltar_bcs(temp):
-#Return the reduced BCS gap deltar = delta(T)/delta(T=0)
-#temp is reduced temperature t=(T/Tc)
-#returns dr, the gap normalized by delta(T=0)
+    r"""Return the reduced BCS gap deltar = delta(T)/delta(T=0).
+
+    Parameters
+    ----------
+    temp : float
+        The reduced temperature temp = T/Tc, where Tc is the superconducting critical temperature.
+
+    Returns
+    -------
+    dr : float
+        The reduced superconducting energy gap delta(T)/delta(T=0).
+
+    Note
+    ----
+    Tabulated data from Muhlschlegel (1959).
+    Low-temperature analytic formula from Gao (2008).
+    """
 
     #The BCS gap factor
     bcs = 1.764
@@ -39,7 +53,22 @@ def deltar_bcs(temp):
     return dr
 
 def deltar_cos(temp):
-    #Returns an approximation of the bcs energy gap (reduced by the zero temp gap)
+    r"""Return the reduced BCS gap deltar = delta(T)/delta(T=0).
+
+    Parameters
+    ----------
+    temp : float
+        The reduced temperature temp = T/Tc, where Tc is the superconducting critical temperature.
+
+    Returns
+    -------
+    dr : float
+        The reduced superconducting energy gap delta(T)/delta(T=0).
+
+    Note
+    ----
+    Cosine approximation for gap taken from Pöpel (1989)."""
+
     if temp < 1:
         return ma.sqrt(ma.cos(0.5*ma.pi*temp**2))
     else:
