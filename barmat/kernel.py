@@ -1,13 +1,17 @@
+# coding=utf-8
 from __future__ import division
-import numba
 import math as ma
+
+import numba
 import numpy as np
-from volume_integrals import intR, intS
-from tools import wrap_for_numba
+
+from .volume_integrals import intR, intS
+from .tools import wrap_for_numba, do_integral
 
 
 @numba.jit("float64(float64[:])")
 def reKlint1_a1(args):
+    r"""Energy integral of real part of K, limits -dr to 0."""
     #u-substitution, u**2 = en+dr
     #from -dr to 0, only fires if f >= 2*dr
     #ulims are: 0, sqrt(dr)
@@ -30,6 +34,7 @@ def reKlint1_a1(args):
 
 @numba.jit("float64(float64[:])")
 def reKlint1_a2(args):
+    r"""Energy integral of real part of K, limits dr-fr to dr-0.5*fr."""
     #u-substitution, u**2 = (en+fr)-dr
     #from dr-fr to dr-0.5*fr
     #ulims are: 0, sqrt(0.5*fr)
@@ -52,6 +57,7 @@ def reKlint1_a2(args):
 
 @numba.jit("float64(float64[:])")
 def reKlint1_b(args):
+    r"""Energy integral of real part of K, limits are max(0, dr-0.5*fr) to dr."""
     #u-substitution, u**2 = dr-en
     #from 0 to dr OR dr-0.5*fr to dr, depending on whether fr > 2*dr
     #ulims are: 0 to sqrt(dr) OR 0, sqrt(0.5*fr)
@@ -74,6 +80,7 @@ def reKlint1_b(args):
 
 @numba.jit("float64(float64[:])")
 def reKlint2_a(args):
+    r"""Energy integral of real part of K, limits are dr-fr to -fr/2."""
     #u-substitution, u**2 = en+fr-dr
     #from dr-fr to -fr/2, only fires if fr > 2*dr
     #ulims are: 0, sqrt(0.5*fr-dr)
@@ -97,6 +104,7 @@ def reKlint2_a(args):
 
 @numba.jit("float64(float64[:])")
 def reKlint2_b(args):
+    """Energy integral of real part of K, limits are -fr/2 to -dr."""
     #u-substitution, u**2 = -en-dr
     #from -fr/2 to -dr, only fires if fr > 2*dr
     #ulims are: 0, sqrt(0.5*fr-dr)
@@ -120,6 +128,7 @@ def reKlint2_b(args):
 
 @numba.jit("float64(float64[:])")
 def reKlint3(args):
+    r"""Energy integral of real part of K, limits are dr to infinity."""
     #u-substitution, u**2 = en-dr
     #from dr to infinity
     #ulims are: 0, 31.6 <-- this is big enough, rounding errors happen at big numbers
@@ -144,6 +153,7 @@ def reKlint3(args):
 
 @numba.jit("float64(float64[:])")
 def imKlint1_a(args):
+    r"""Energy integral of imaginary part of K, limits are dr-fr to -dr."""
     #from dr-fr to -dr
     #ulims are: 0, sqrt(0.5*fr-dr)
 
@@ -165,6 +175,7 @@ def imKlint1_a(args):
 
 @numba.jit("float64(float64[:])")
 def imKlint1_b(args):
+    r"""Energy integral of imaginary part of K, limits are dr-fr to -dr."""
     #from dr-fr to -dr
     #ulims are: 0, sqrt(0.5*fr-dr)
 
@@ -186,6 +197,7 @@ def imKlint1_b(args):
 
 @numba.jit("float64(float64[:])")
 def imKlint2(args):
+    r"""Energy integral of imaginary part of K, limits are dr to infinity."""
     #u-substitution, u**2 = en-dr
     #from dr to infinity
     #ulims are 0, infinity
@@ -209,6 +221,7 @@ def imKlint2(args):
 
 
 #Make C-language callbacks from each of the integrand functions for scipy quad
+#Signature for each is float64(int, Pointer-to-float64-array)
 c_reKlint1_a1 = wrap_for_numba(reKlint1_a1)
 c_reKlint1_a2 = wrap_for_numba(reKlint1_a2)
 c_reKlint1_b = wrap_for_numba(reKlint1_b)
@@ -222,7 +235,7 @@ c_imKlint2 = wrap_for_numba(imKlint2)
 
 
 def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=False):
-    """Calculate the Kl integral over energy. Kl = K*mfp**2 where K is the Kernel from Poppel.
+    r"""Calculate the Kl integral over energy. Kl = K*mfp^2 where K is the Kernel from Poppel.
 
     Parameters
     ----------
@@ -257,7 +270,7 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=False):
     Returns
     -------
     Kl : complex float
-        Kl = K*mfp^2 where K is the complex Mattis-Bardeen Kernel as a function
+        Kl = K*mfp**2 where K is the complex Mattis-Bardeen Kernel as a function
         of x = q*mfp, mfp is the mean free path and q is the
         coordinate resulting from a fourier transform of position.
 

@@ -1,7 +1,12 @@
+# coding=utf-8
 from __future__ import division
+import math as ma
+
 import scipy.interpolate as si
 import numpy as np
-import math as ma
+
+__all__ = [ 'deltar_bcs',
+            'deltar_cos']
 
 def deltar_bcs(temp):
     r"""Return the reduced BCS gap deltar = delta(T)/delta(T=0).

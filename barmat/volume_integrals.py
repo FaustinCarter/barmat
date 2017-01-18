@@ -1,6 +1,8 @@
+# coding=utf-8
 from __future__ import division
-import numba
 import math as ma
+
+import numba
 
 @numba.jit("float64(float64, float64, float64)")
 def intR(a, b, x):

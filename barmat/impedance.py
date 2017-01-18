@@ -1,9 +1,16 @@
+# coding=utf-8
 from __future__ import division
-import numpy as np
 import cmath as cm
-from tools import do_integral, init_from_physical_data
-from kernel import cmplx_kernel
-from gap_functions import deltar_bcs
+
+import numpy as np
+import scipy.constants as sc
+
+from .tools import do_integral, init_from_physical_data
+from .kernel import cmplx_kernel
+from .gap_functions import deltar_bcs
+
+__all__ = [ 'get_Z',
+            'cmplx_impedance']
 
 def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
     r"""Return Z at several temperatures or frequencies.
@@ -60,12 +67,15 @@ def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
         Default is False."""
 
     allowed_axes = ['temperature',
-                    'frequency']
+                    't',
+                    'frequency',
+                    'f']
 
     assert axis in allowed_axes, "Invalid axis."
 
     #This is the value that specifies delta0 = bcs*kB*Tc
     bcs = kwargs.pop('bcs', 1.76)
+    delta0 = bcs*sc.k*tc/sc.e
 
     #Initialize values
     #zs_kwargs contains x0, x1, vf, bcs

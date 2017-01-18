@@ -1,8 +1,10 @@
+# coding=utf-8
 from __future__ import division
+
 import numba
-import scipty.integrate as sint
-import ctypes as ct
+import scipy.integrate as sint
 import scipy.constants as sc
+import ctypes as ct
 
 def get_delta0(tc, bcs=1.76):
     "Calculate delta0 from Tc and a custom value of the BCS constant."
