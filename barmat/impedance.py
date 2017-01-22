@@ -4,6 +4,7 @@ import cmath as cm
 
 import numpy as np
 import scipy.constants as sc
+import scipy.integrate as sint
 
 from .tools import do_integral, init_from_physical_data
 from .kernel import cmplx_kernel
@@ -64,7 +65,12 @@ def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
         Sets the output units. False returns complex impedance in Ohms. True
         converts the complex impedance to a skin-depth (real part) and a
         superconducting penetration depth (imaginary part), both in meters.
-        Default is False."""
+        Default is False.
+
+    boundary : string (optional)
+        Options are ``'diffuse'``/``'d'`` or ``'specular'``/``'s'``. Determines
+        whether the impedance calculation assumes diffuse or specular scattering
+        at the boundaries of the superconductor. Default is ``'diffuse'``."""
 
     allowed_axes = ['temperature',
                     't',
@@ -86,33 +92,35 @@ def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
     if gap is not None:
         zs_kwargs['gap'] = gap
 
+    verbose = kwargs.pop('verbose', False)
+    zs_kwargs['verbose'] = verbose
     #Optionally can output penetration/skin depth in meters instead of Ohms
     output_depths = kwargs.pop('output_depths', False)
+    zs_kwargs['output_depths'] = output_depths
+
+    #See if specular reflection is requested
+    boundary = kwargs.pop('boundary', 'diffuse')
+    assert boundary in ['diffuse', 'd', 'specular', 's'], "Invalid boundary type."
+    zs_kwargs['boundary'] = boundary
 
     if axis == 'temperature':
         assert 'fr' in kwargs, "Must supply reduced frequency"
         fr = kwargs['fr']
 
         trs = input_vector
-        zs = np.array([cmplx_impedance(tr, fr, **zs_kwargs) for tr in trs])
-
-        if output_depths:
-            zs /= (sc.mu_0*fr*delta0*sc.e/sc.hbar)
+        zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for tr in trs])
 
     if axis == 'frequency':
         assert 'tr' in kwargs, "Must supply reduced temperature"
         tr = kwargs['tr']
 
         frs = np.asarray(input_vector)
-        zs = np.array([cmplx_impedance(tr, fr, **zs_kwargs) for fr in frs])
-
-        if output_depths:
-            zs /= (sc.mu_0*frs*delta0*sc.e/sc.hbar)
+        zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for fr in frs])
 
     return zs
 
 
-def cmplx_impedance(tr, fr, x0, x1, vf, bcs=1.76, boundary='diffuse', gap = deltar_bcs, verbose=False):
+def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
     r"""Calculate the complex surface impedance (Z) of a superconductor at a
     given temperature and frequency.
 
@@ -140,14 +148,15 @@ def cmplx_impedance(tr, fr, x0, x1, vf, bcs=1.76, boundary='diffuse', gap = delt
     vf : float
         Fermi velocity in m/s.
 
+
+    Keyword Arguments
+    -----------------
     bcs : float (optional)
         The constant that gives the zero-temperature superconducting energy gap
         delta0 according to the equation delta0 = bcs*kB*Tc, where kB is
         Boltzmann's constant and Tc is the superconducting critical temperature.
         Default value is the Bardeen-Cooper-Schrieffer value of 1.76.
 
-    Keyword Arguments
-    -----------------
     boundary : string (optional)
         Options are ``'diffuse'``/``'d'`` or ``'specular'``/``'s'``. Determines
         whether the impedance calculation assumes diffuse or specular scattering
@@ -160,6 +169,12 @@ def cmplx_impedance(tr, fr, x0, x1, vf, bcs=1.76, boundary='diffuse', gap = delt
         is float(float) with return value between zero and one. Default is
         tabulated values from Muhlschlegel (1959) via the deltar_bcs function.
 
+    output_depths : bool (optional)
+        Sets the output units. False returns complex impedance in Ohms. True
+        converts the complex impedance to a skin-depth (real part) and a
+        superconducting penetration depth (imaginary part), both in meters.
+        Default is False.
+
     verbose : bool (optional)
         Whether to print out some debugging information. Very much a work in
         progress. Default is False.
@@ -168,19 +183,38 @@ def cmplx_impedance(tr, fr, x0, x1, vf, bcs=1.76, boundary='diffuse', gap = delt
     -------
     Z: The complex surface impedance in Ohms."""
 
-    #Calculate the prefactor. Mostly this doesn't matter since we care about ratios.
-    prefactor = fr*x0*sc.mu_0*vf
+    #Optionally can output penetration/skin depth in meters instead of Ohms
+    output_depths = kwargs.pop('output_depths', False)
+
+    verbose = kwargs.pop('verbose', False)
+    boundary = kwargs.pop('boundary', 'diffuse')
+
+    gap = kwargs.pop('gap', deltar_bcs)
 
     dr = gap(tr)
+    bcs = kwargs.pop('bcs', 1.76)
+    delta0 = bcs*sc.k*tc/sc.e
 
-    k = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=False)
+    #Calculate the prefactor. Mostly this doesn't matter since we care about ratios.
+    if output_depths:
+        prefactor = x0*vf*sc.hbar/(delta0*sc.e)
+    else:
+        prefactor = fr*x0*sc.mu_0*vf
+
+
+
+    k = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose)
 
     if (boundary == 'diffuse') or (boundary == 'd'):
         reInvZint = lambda x : cm.log(1+k(x)/x**2).real
         imInvZint = lambda x : cm.log(1+k(x)/x**2).imag
 
-        reInvZ, reInvZerr, _, _ = do_integral(reInvZint, 0, np.inf, verbose=verbose)
-        imInvZ, imInvZerr, _, _ = do_integral(imInvZint, 0, np.inf, verbose=verbose)
+        # reInvZ, reInvZerr, _, _ = do_integral(reInvZint, 0, np.inf, verbose=verbose)
+        # imInvZ, imInvZerr, _, _ = do_integral(imInvZint, 0, np.inf, verbose=verbose)
+
+        reInvZ, reInvZerr = sint.quad(reInvZint, 0, np.inf)
+        imInvZ, imInvZerr = sint.quad(imInvZint, 0, np.inf)
+
 
         invZ = reInvZ + 1j*imInvZ
 
@@ -190,8 +224,12 @@ def cmplx_impedance(tr, fr, x0, x1, vf, bcs=1.76, boundary='diffuse', gap = delt
         reZint = lambda x : (1/(x**2+k(x))).real
         imZint = lambda x : (1/(x**2+k(x))).imag
 
-        reZ, reZerr, _, _ = do_integral(reZint, -np.inf, np.inf, verbose=verbose)
-        imZ, imZerr, _, _ = do_integral(imZint, -np.inf, np.inf, verbose=verbose)
+        # reZ, reZerr, _, _ = do_integral(reZint, -np.inf, np.inf, verbose=verbose)
+        # imZ, imZerr, _, _ = do_integral(imZint, -np.inf, np.inf, verbose=verbose)
+
+        reZ, reZerr = sint.quad(reZint, -np.inf, np.inf)
+        imZ, imZerr = sint.quad(imZint, -np.inf, np.inf)
+
 
         Z = (reZ + 1j*imZ)/np.pi**2
 

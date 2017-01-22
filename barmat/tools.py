@@ -129,10 +129,11 @@ def do_integral(int_fun, a, b, iargs=None, verbose=False):
                 funcName = 'Unknown name'
 
             if iargs is not None:
-                print funcName+": x=%s, xop=%s, tr=%s, fr=%s, dr=%s" % iargs
+                print funcName
+                #+": x=%s, xop=%s, tr=%s, fr=%s, dr=%s" % iargs
             else:
                 print funcName
-            print "Result: %s, error: %s" % (result, error)
+            #print "Result: %s, error: %s" % (result, error)
             print error_msg
 
     return int_tup

@@ -4,6 +4,7 @@ import math as ma
 
 import numba
 import numpy as np
+import scipy.integrate as sint
 
 from .volume_integrals import intR, intS
 from .tools import wrap_for_numba, do_integral
@@ -141,7 +142,11 @@ def reKlint3(args):
     dr = args[5]
     bcs = args[6]
 
-    en = u**2+dr
+    #Fixes the divide by zero error nicely
+    if (fr == 0) and (u**2/dr < 0.01):
+        en = dr*(1+1e-2)
+    else:
+        en = u**2+dr
 
     e1 = ma.sqrt(en**2-dr**2)
     e2 = ma.sqrt((en+fr)**2-dr**2)
@@ -294,6 +299,7 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=False):
         reKl = intS(fr*x0/np.pi, 1, x)
         imKl = intR(fr*x0/np.pi, 1, x)
 
+
     else:
         #arguments to pass the integrand functions
         iargs = (x, x0/np.pi, tr, fr, dr, bcs,)
@@ -303,10 +309,29 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=False):
 
         #Now run the integrals
 
-        if fr/dr < 2:
+        if (fr == 0):
+            #All the integrals blow up here, but it's ok, because only three
+            #contribute. reKl1_a2 and reKl1_b have an analytic expression,
+            #and reKl3 has a limit built into it.
+
+            iargs_f0 = (x, x0/np.pi, tr, dr, bcs,)
+
+            #reKl1_a2 = reKl1_b = Fermi*intR*0.25*pi
+            reKl1 = -2*ma.tanh(-0.5*bcs*dr/tr)*intR(0, 1, x)*0.5*ma.pi*dr
+            reKl1err = 0
+            reKl2 = 0
+            reKl2err = 0
+            imKl1 = 0
+            imKl1err = 0
+            imKl2 = 0
+            imKl2err = 0
+
+        elif (fr/dr < 2):
             #from (dr-fr) to dr (inside the gap), limits look wierd due to u-substitution
-            reKl1a, reKl1aerr, _, _ = do_integral(c_reKlint1_a2.ctypes, 0, ma.sqrt(0.5*fr), iargs, verbose=verbose)
-            reKl1b, reKl1berr, _, _ = do_integral(c_reKlint1_b.ctypes, 0, ma.sqrt(0.5*fr), iargs, verbose=verbose)
+            # reKl1a, reKl1aerr, _, _ = do_integral(c_reKlint1_a2.ctypes, 0, ma.sqrt(0.5*fr), iargs, verbose=verbose)
+            # reKl1b, reKl1berr, _, _ = do_integral(c_reKlint1_b.ctypes, 0, ma.sqrt(0.5*fr), iargs, verbose=verbose)
+            reKl1a, reKl1aerr = sint.quad(c_reKlint1_a2.ctypes, 0, ma.sqrt(0.5*fr), iargs)
+            reKl1b, reKl1berr = sint.quad(c_reKlint1_b.ctypes, 0, ma.sqrt(0.5*fr), iargs)
 
             reKl1 = reKl1a + reKl1b
             reKl1err = reKl1aerr + reKl1berr
@@ -320,31 +345,46 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=False):
         else:
             #from -dr to dr (inside the gap), limits look wierd due to u-substitution
 
-            reKl1a, reKl1aerr, _, _ = do_integral(c_reKlint1_a1.ctypes, 0, ma.sqrt(dr), iargs, verbose=verbose)
-            reKl1b, reKl1berr, _, _ = do_integral(c_reKlint1_b.ctypes, 0, ma.sqrt(dr), iargs, verbose=verbose)
+            # reKl1a, reKl1aerr, _, _ = do_integral(c_reKlint1_a1.ctypes, 0, ma.sqrt(dr), iargs, verbose=verbose)
+            # reKl1b, reKl1berr, _, _ = do_integral(c_reKlint1_b.ctypes, 0, ma.sqrt(dr), iargs, verbose=verbose)
+
+            reKl1a, reKl1aerr = sint.quad(c_reKlint1_a1.ctypes, 0, ma.sqrt(dr), iargs)
+            reKl1b, reKl1berr = sint.quad(c_reKlint1_b.ctypes, 0, ma.sqrt(dr), iargs)
 
             reKl1 = reKl1a + reKl1b
             reKl1err = reKl1aerr + reKl1berr
 
             #from dr-fr to -dr (below the gap), limits look wierd due to u-substitution
-            reKl2a, reKl2aerr, _, _ = do_integral(c_reKlint2_a.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs, verbose=verbose)
-            reKl2b, reKl2berr, _, _ = do_integral(c_reKlint2_b.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs, verbose=verbose)
+            # reKl2a, reKl2aerr, _, _ = do_integral(c_reKlint2_a.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs, verbose=verbose)
+            # reKl2b, reKl2berr, _, _ = do_integral(c_reKlint2_b.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs, verbose=verbose)
+
+            reKl2a, reKl2aerr = sint.quad(c_reKlint2_a.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs)
+            reKl2b, reKl2berr = sint.quad(c_reKlint2_b.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs)
 
             reKl2 = reKl2a+reKl2b
             reKl2err = reKl2aerr+reKl2berr
 
-            imKl1a, imKl1aerr, _, _ = do_integral(c_imKlint1_a.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs, verbose=verbose)
-            imKl1b, imKl1berr, _, _ = do_integral(c_imKlint1_b.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs, verbose=verbose)
+            # imKl1a, imKl1aerr, _, _ = do_integral(c_imKlint1_a.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs, verbose=verbose)
+            # imKl1b, imKl1berr, _, _ = do_integral(c_imKlint1_b.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs, verbose=verbose)
+
+            imKl1a, imKl1aerr = sint.quad(c_imKlint1_a.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs)
+            imKl1b, imKl1berr = sint.quad(c_imKlint1_b.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs)
+
 
             imKl1 = imKl1a+imKl1b
             imKl1err = imKl1aerr+imKl1berr
 
 
 
+
         #from dr to infinity (above the gap), limits look wierd due to u-substitution
         #Wierd things happen numerically at infinity. 31.6 is far enough. equals about 1000 gaps.
-        reKl3, reKl3err, _, _ = do_integral(c_reKlint3.ctypes, 0, 31.6, iargs, verbose=verbose)
-        imKl2, imKl2err, _, _ = do_integral(c_imKlint2.ctypes, 0, np.inf, iargs, verbose=verbose)
+        # reKl3, reKl3err, _, _ = do_integral(c_reKlint3.ctypes, 0, 31.6, iargs, verbose=verbose)
+        # imKl2, imKl2err, _, _ = do_integral(c_imKlint2.ctypes, 0, np.inf, iargs, verbose=verbose)
+
+        reKl3, reKl3err = sint.quad(c_reKlint3.ctypes, 0, 31.6, iargs)
+        imKl2, imKl2err = sint.quad(c_imKlint2.ctypes, 0, np.inf, iargs)
+
 
         reKl = reKl1+reKl2+reKl3
         imKl = imKl1+imKl2
