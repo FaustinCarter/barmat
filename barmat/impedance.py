@@ -70,7 +70,17 @@ def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
     boundary : string (optional)
         Options are ``'diffuse'``/``'d'`` or ``'specular'``/``'s'``. Determines
         whether the impedance calculation assumes diffuse or specular scattering
-        at the boundaries of the superconductor. Default is ``'diffuse'``."""
+        at the boundaries of the superconductor. Default is ``'diffuse'``.
+
+    Returns
+    -------
+    zs : numpy array
+        The complex impedance calculated at each value of input_vector.
+
+    Note
+    ----
+    fr = 0 may return slightly wrong number for specular boundary conditions.
+    Not sure why."""
 
     allowed_axes = ['temperature',
                     't',
@@ -181,7 +191,12 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
 
     Returns
     -------
-    Z: The complex surface impedance in Ohms."""
+    Z: The complex surface impedance in Ohms.
+
+    Note
+    ----
+    fr = 0 may return slightly wrong number for specular boundary conditions.
+    Not sure why."""
 
     #Optionally can output penetration/skin depth in meters instead of Ohms
     output_depths = kwargs.pop('output_depths', False)
