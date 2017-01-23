@@ -3,10 +3,14 @@ from __future__ import division
 import math as ma
 
 import scipy.constants as sc
+import numba
 
 #Eventually more complex/realistic Fermi Functions may live here. For now, just
 #the standard vanilla version is available.
 
+#TODO: Actually implement this function in the kernel.py code.
+
+@numba.jit("float64(float64, float64, string)")
 def fermi_fun(en, temp, units = 'joules'):
     """Calculate the Fermi Function given some energy and some temperature.
 
@@ -21,22 +25,33 @@ def fermi_fun(en, temp, units = 'joules'):
     Keyword Arguments
     -----------------
     units : string
-        Select units of energy. Acceptable values are ``'joules' or 'eV'``.
-        Default is ``'joules'``. Temperature units still must be in Kelvin.
+        Select units of energy. Acceptable values are ``'joules' or 'eV' or
+        'reduced'``. Default is ``'joules'``. Reduced units means both values
+        are unitless, so onus is on the user to ensure that ``en/temp`` gives
+        the desired result.
 
     Returns
     -------
     ffun : float
         The Fermi Function at en and temp."""
 
-    assert units in ['joules', 'j', 'eV', 'ev', 'e'], "Unknown units requested."
+    known_units = [ 'Joules', 'joules', 'j', #Joules
+                    'eV', 'ev', 'e', #Electron Volts
+                    'reduced', 'r']  #Unitless proxys
 
-    #Convert temperature Kelvin to Joules
-    kbt = sc.k*temp
+    assert units in known_units, "Unknown units requested."
+
+    #Convert temperature to joules
+    if units in ['joules', 'j']
+        kbt = sc.k*temp
 
     #Or eV if desired
-    if units in ['eV', 'ev', 'e']:
-        kbt /= sc.e
+    elif units in ['eV', 'ev', 'e']:
+        kbt = sc.k*temp/sc.e
+
+    #Or allow for unitless quantities
+    elif units in ['reduced', 'r']:
+        kbt = temp
 
     if en == 0:
         ffun = 0.5

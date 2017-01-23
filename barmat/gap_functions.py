@@ -53,12 +53,13 @@ def deltar_bcs(temp):
         dr = 1.0
     else:
         #This expression does a nice job of smoothely connecting the table to zero temp
+        #Taken from Gao 2008
         dr = ma.exp(-ma.sqrt(2*bcs*temp)*ma.exp(-bcs/temp))
 
     return dr
 
 def deltar_cos(temp):
-    r"""Return the reduced BCS gap deltar = delta(T)/delta(T=0).
+    r"""Return the approximated reduced BCS gap deltar = delta(T)/delta(T=0).
 
     Parameters
     ----------

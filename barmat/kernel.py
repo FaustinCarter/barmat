@@ -240,7 +240,7 @@ c_imKlint2 = wrap_for_numba(imKlint2)
 
 
 def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=False):
-    r"""Calculate the Kl integral over energy. Kl = K*mfp^2 where K is the Kernel from Poppel.
+    r"""Calculate the Kl integral over energy. Kl = K*mfp^2 where K is the Mattis-Bardeen Kernel.
 
     Parameters
     ----------
@@ -281,7 +281,7 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=False):
 
     Note
     ----
-    See Pöpel (1989) or Gao (2008)."""
+    See Mattis and Bardeen (1958), Pöpel (1989), or Gao (2008)."""
 
 
     #Hackish way to make sure there are no divide by zero errors.
