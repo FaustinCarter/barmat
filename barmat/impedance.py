@@ -13,7 +13,7 @@ from .gap_functions import deltar_bcs
 __all__ = [ 'get_Z',
             'cmplx_impedance']
 
-def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
+def get_Z(input_vector, tc, vf, london0, axis='temperature', **kwargs):
     r"""Return Z at several temperatures or frequencies.
 
     Parameters
@@ -30,23 +30,21 @@ def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
     vf : float
         Fermi velocity in m/s.
 
-    mfp : float
-        Mean free path in m.
-
     london0 : float
         London penetration depth at zero temperature in m.
 
     axis : 'string' (optional)
-        Acceptable values are ``'temperature'`` or ``'frequency'``. Specifies
-        what the units of the ``input_vector`` parameter are. Default is
-        ``'temperature'``.
+        Acceptable values are ``'temperature' or 'frequency' or 'mean free
+        path'``. Specifies what the units of the ``input_vector`` parameter are.
+        Default is ``'temperature'``.
 
     Keyword Arguments
     -----------------
-    tr or fr : float (required)
+    mfp, tr, fr : float (required)
         If ``axis == 'temperature'`` must specify reduced frequency value fr =
-        h*f/delta0. If ``axis == 'frequency'`` must specify a reduced
-        temperature value tr = T/Tc.
+        h*f/delta0 and mean-free-path in meters. If ``axis == 'frequency'`` must specify a reduced
+        temperature value tr = T/Tc and mean-free-path in meters. If ``axis == 'mean free path'`` must
+        specify both fr and tr.
 
     bcs : float (optional)
         The constant that gives the zero-temperature superconducting energy gap
@@ -85,7 +83,10 @@ def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
     allowed_axes = ['temperature',
                     't',
                     'frequency',
-                    'f']
+                    'f',
+                    'mean free path',
+                    'mfp',
+                    'l']
 
     assert axis in allowed_axes, "Invalid axis."
 
@@ -93,9 +94,8 @@ def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
     bcs = kwargs.pop('bcs', 1.76)
     delta0 = bcs*sc.k*tc/sc.e
 
-    #Initialize values
-    #zs_kwargs contains x0, x1, vf, bcs
-    zs_kwargs = init_from_physical_data(tc, vf, london0, mfp, bcs)
+    #Kwargs to pass to the cmplx_impedance function
+    zs_kwargs = {}
 
     #Allow for passing in a custom gap function
     gap = kwargs.pop('gap', None)
@@ -113,19 +113,52 @@ def get_Z(input_vector, tc, vf, mfp, london0, axis='temperature', **kwargs):
     assert boundary in ['diffuse', 'd', 'specular', 's'], "Invalid boundary type."
     zs_kwargs['boundary'] = boundary
 
-    if axis == 'temperature':
+    if axis in ['mfp', 'mean free path', 'l']:
         assert 'fr' in kwargs, "Must supply reduced frequency"
         fr = kwargs['fr']
 
-        trs = input_vector
-        zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for tr in trs])
-
-    if axis == 'frequency':
         assert 'tr' in kwargs, "Must supply reduced temperature"
         tr = kwargs['tr']
 
-        frs = np.asarray(input_vector)
-        zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for fr in frs])
+        mfps = input_vector
+
+        zs = []
+
+        for mfp in mfps:
+            #Convert physical data to params
+            params_dict = init_from_physical_data(tc, vf, london0, mfp, bcs)
+
+            #Add the parameters from physical data into the kwargs dict
+            zs_kwargs.update(params_dict)
+
+            #Calculate the next impedance
+            zs.append(cmplx_impedance(tr, fr, tc, **zs_kwargs))
+
+        #Convert to numpy array
+        zs = np.asarray(zs)
+
+
+
+    else:
+        #Convert physical data to params
+        params_dict = init_from_physical_data(tc, vf, london0, mfp, bcs)
+
+        #Add the parameters from physical data into the kwargs dict
+        zs_kwargs.update(params_dict)
+
+        if axis in ['temperature', 't']:
+            assert 'fr' in kwargs, "Must supply reduced frequency"
+            fr = kwargs['fr']
+
+            trs = input_vector
+            zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for tr in trs])
+
+        if axis in ['frequency', 'f']:
+            assert 'tr' in kwargs, "Must supply reduced temperature"
+            tr = kwargs['tr']
+
+            frs = np.asarray(input_vector)
+            zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for fr in frs])
 
     return zs
 
