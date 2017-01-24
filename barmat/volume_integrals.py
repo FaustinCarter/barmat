@@ -31,11 +31,11 @@ def intR(a, b, x):
         r = b/(3.0*z2) #This is really r/x
 
     #for small x
-    elif x < 0.001*ma.sqrt(z2):
+    elif x < 0.01*ma.sqrt(z2):
         r = b/(3.0*z2) #This is really r/x
 
     #for large x
-    elif x > 2000*z2:
+    elif x > 100*ma.sqrt(z2):
         r = (ma.pi*(1+(b**2-a**2)/x**2)/4-b/x)/x #This is really r/x
 
     #in between x
@@ -73,11 +73,11 @@ def intS(a, b, x):
         s = a/(3.0*z2) #This is really s/x
 
     #for small x
-    elif x < 0.001*ma.sqrt(z2):
+    elif x < 0.01*ma.sqrt(z2):
         s = a/(3.0*z2) #This is really s/x
 
     #for large x
-    elif x > 2000*z2:
+    elif x > 100*ma.sqrt(z2):
         s = (a/x - a*b*ma.pi/(2*x**2))/x #This is really s/x
 
     #in between x
