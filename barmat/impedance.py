@@ -9,12 +9,12 @@ import scipy.integrate as sint
 
 from .tools import do_integral, init_from_physical_data
 from .kernel import cmplx_kernel
-from .gap_functions import deltar_bcs
+from .gap_functions import deltar_bcs, deltar_cos
 
-__all__ = [ 'get_Z',
+__all__ = [ 'get_Zvec',
             'cmplx_impedance']
 
-def get_Z(input_vector, tc, vf, london0, axis='temperature', **kwargs):
+def get_Zvec(input_vector, tc, vf, london0, axis='temperature', **kwargs):
     r"""Return Z at several temperatures or frequencies.
 
     Parameters
@@ -53,12 +53,15 @@ def get_Z(input_vector, tc, vf, london0, axis='temperature', **kwargs):
         Boltzmann's constant and Tc is the superconducting critical temperature.
         Default value is the Bardeen-Cooper-Schrieffer value of 1.76.
 
-    gap : python function (optional)
+    gap : python function or string (optional)
         Python function that gives a value for the reduced superconducting
         energy gap deltar(T) = delta(T)/delta0, where delta is the
         superconducting energy gap and delta0 = delta(T=0). Function signature
         is float(float) with return value between zero and one. Default is
         tabulated values from Muhlschlegel (1959) via the deltar_bcs function.
+        Optionally, one may pass the string ``'cos'`` to use the built-in cosine
+        approximation of the gap.
+
 
     output_depths : bool (optional)
         Sets the output units. False returns complex impedance in Ohms. True
@@ -109,7 +112,10 @@ def get_Z(input_vector, tc, vf, london0, axis='temperature', **kwargs):
     #Allow for passing in a custom gap function
     gap = kwargs.pop('gap', None)
     if gap is not None:
-        zs_kwargs['gap'] = gap
+        if gap == 'cos':
+            zs_kargs = deltar_cos
+        else:
+            zs_kwargs['gap'] = gap
 
     verbose = kwargs.pop('verbose', 0)
     zs_kwargs['verbose'] = verbose
@@ -194,8 +200,8 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
         energy gap.
 
     x1 : float
-        Mean free path (mfp) divided by the zero-temperature London penetration depth
-        (london0).
+        Mean free path (mfp) divided by the zero-temperature London penetration
+        depth (london0).
 
     vf : float
         Fermi velocity in m/s.
@@ -214,12 +220,14 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
         whether the impedance calculation assumes diffuse or specular scattering
         at the boundaries of the superconductor. Default is ``'diffuse'``.
 
-    gap : python function (optional)
+    gap : python function or string (optional)
         Python function that gives a value for the reduced superconducting
         energy gap deltar(T) = delta(T)/delta0, where delta is the
         superconducting energy gap and delta0 = delta(T=0). Function signature
         is float(float) with return value between zero and one. Default is
         tabulated values from Muhlschlegel (1959) via the deltar_bcs function.
+        Optionally, one may pass the string ``'cos'`` to use the built-in cosine
+        approximation of the gap.
 
     output_depths : bool (optional)
         Sets the output units. False returns complex impedance in Ohms. True
@@ -254,7 +262,14 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
     verbose = kwargs.pop('verbose', 0)
     boundary = kwargs.pop('boundary', 'diffuse')
 
-    gap = kwargs.pop('gap', deltar_bcs)
+    gap = kwargs.pop('gap', None)
+    if gap is None:
+        gap = deltar_bcs
+    elif gap == 'cos':
+        gap = deltar_cos
+    else:
+        #TODO: check user-supplied function for correct sig
+        pass
 
     dr = gap(tr)
     bcs = kwargs.pop('bcs', 1.76)
@@ -287,13 +302,23 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
 
         imInvZint = lambda x : ma.atan2(imK(x),(x**2+reK(x))) #Use atan2 because phase matters
 
-        reInvZ_a, reInvZerr_a = do_integral(reInvZint_a, 1, np.inf, func_name = "Diffuse:reInvZint_a", extra_info=param_vals_string, verbose=verbose)
-        reInvZ_b, reInvZerr_b = do_integral(reInvZint_b, 0, 1, func_name = "Diffuse:reInvZint_b", extra_info=param_vals_string, verbose=verbose)
+        reInvZ_a, reInvZerr_a = do_integral(reInvZint_a, 1, np.inf,
+                                            func_name = "Diffuse:reInvZint_a",
+                                            extra_info=param_vals_string,
+                                            verbose=verbose)
+
+        reInvZ_b, reInvZerr_b = do_integral(reInvZint_b, 0, 1,
+                                            func_name = "Diffuse:reInvZint_b",
+                                            extra_info=param_vals_string,
+                                            verbose=verbose)
 
         reInvZ = reInvZ_a + reInvZ_b + 2
         reInvZerr = reInvZerr_a + reInvZerr_b
 
-        imInvZ, imInvZerr = do_integral(imInvZint, 0, np.inf, func_name = "Diffuse:imInvZint", extra_info=param_vals_string, verbose=verbose)
+        imInvZ, imInvZerr = do_integral(imInvZint, 0, np.inf,
+                                        func_name = "Diffuse:imInvZint",
+                                        extra_info=param_vals_string,
+                                        verbose=verbose)
 
         invZ = reInvZ + 1j*imInvZ
 
@@ -311,8 +336,15 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
         reZint = lambda x : (1/(x**2+k(x))).real
         imZint = lambda x : (1/(x**2+k(x))).imag
 
-        reZ, reZerr = do_integral(reZint, -np.inf, np.inf, func_name="Specular:reZint", extra_info=param_vals_string, verbose=verbose)
-        imZ, imZerr = do_integral(imZint, -np.inf, np.inf, func_name="Specular:imZint", extra_info=param_vals_string, verbose=verbose)
+        reZ, reZerr = do_integral(reZint, -np.inf, np.inf,
+                                    func_name="Specular:reZint",
+                                    extra_info=param_vals_string,
+                                    verbose=verbose)
+
+        imZ, imZerr = do_integral(imZint, -np.inf, np.inf,
+                                    func_name="Specular:imZint",
+                                    extra_info=param_vals_string,
+                                    verbose=verbose)
 
         Zerr = (reZerr+1j*imZerr)/np.pi**2
 
