@@ -1,10 +1,12 @@
 # coding=utf-8
 from __future__ import division
+import warnings
 
 import numba
 import scipy.integrate as sint
 import scipy.constants as sc
 import ctypes as ct
+import pprint
 
 def get_delta0(tc, bcs=1.76):
     "Calculate delta0 from Tc and a custom value of the BCS constant."
@@ -63,9 +65,13 @@ def init_from_physical_data(tc, vf, london0, mfp, bcs=1.76, ksi0=None, delta0=No
 
     Keyword Arguments
     -----------------
-    verbose : bool
-        Default is False. If true, prints some helpful debugging information.
-        Very much a work in progress.
+    verbose : int
+        Whether to print out some debugging information. Very much a work in
+        progress. Default is 0.
+
+        * 0: Don't print out any debugging information
+        * 1: Print out minimal debugging information
+        * 2: Print out full output from quad routines
 
     Returns
     -------
@@ -85,7 +91,7 @@ def init_from_physical_data(tc, vf, london0, mfp, bcs=1.76, ksi0=None, delta0=No
     x0 = mfp/ksi0
     x1 = mfp/london0
 
-    if verbose:
+    if verbose > 1:
         if ksi0_calc is not None:
             print "calculated ksi0 = " + str(ksi0_calc*1e9)+" nm"
             print "supplied ksi0 = " + str(ksi0*1e9)+" nm"
@@ -104,39 +110,51 @@ def init_from_physical_data(tc, vf, london0, mfp, bcs=1.76, ksi0=None, delta0=No
 
     return output_dict
 
-def do_integral(int_fun, a, b, iargs=None, verbose=False):
+def do_integral(int_fun, a, b, iargs=None, **kwargs):
     """Wrapper around scipy.integrate.quad to handle error reporting"""
-    if verbose:
-        full_output = 1
-    else:
-        full_output = 0
 
-    if iargs is not None:
-        int_tup = sint.quad(int_fun, a, b, iargs, full_output = full_output)
-    else:
-        int_tup = sint.quad(int_fun, a, b, full_output = full_output)
+    #Parse the kwargs
+    func_name=kwargs.pop('func_name', None)
+    extra_info=kwargs.pop('extra_info', None)
+    iargs_format_strings = kwargs.pop('iargs_format_strings',None)
+    verbose = kwargs.pop('verbose', 0)
 
-    if len(int_tup) == 3:
-        int_tup = tuple(list(int_tup)+[''])
-    if len(int_tup) == 2:
-        int_tup = tuple(list(int_tup)+[{}]+[''])
-    else:
-        result, error, id_dict, error_msg = int_tup
-        if verbose:
-            try:
-                funcName = int_fun.__name__
-            except AttributeError:
-                funcName = 'Unknown name'
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=sint.IntegrationWarning)
 
+        #First run the integral with full_output = 0, which will generate a warning if there's an issue
+        try:
             if iargs is not None:
-                print funcName
-                #+": x=%s, xop=%s, tr=%s, fr=%s, dr=%s" % iargs
+                result, result_err = sint.quad(int_fun, a, b, iargs)
             else:
-                print funcName
-            #print "Result: %s, error: %s" % (result, error)
-            print error_msg
+                result, result_err = sint.quad(int_fun, a, b)
 
-    return int_tup
+        #If there is an issue, rerun it with full_output = 1, which will suppress the warning,
+        #but will generate some useful debugging information
+        except sint.IntegrationWarning:
+            if iargs is not None:
+                result, result_err, output_dict, error_msg = sint.quad(int_fun, a, b, iargs, full_output=1)
+            else:
+                result, result_err, output_dict, error_msg = sint.quad(int_fun, a, b, full_output=1)
+
+            if func_name is None:
+                try:
+                    func_name = int_fun.__name__
+                except AttributeError:
+                    func_name = 'Unknown name'
+                    
+            if verbose > 0:
+                print func_name
+                if extra_info is not None:
+                    print extra_info
+                if iargs is not None:
+                    print "iargs = ", iargs
+                print result, result_err
+                print error_msg
+                if verbose > 1:
+                    pprint.pprint(output_dict)
+
+    return (result, result_err)
 
 def wrap_for_numba(func):
     """Uses numba to create a C-callback out of a function.

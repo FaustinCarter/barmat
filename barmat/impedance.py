@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import division
 import cmath as cm
+import math as ma
 
 import numpy as np
 import scipy.constants as sc
@@ -70,6 +71,14 @@ def get_Z(input_vector, tc, vf, london0, axis='temperature', **kwargs):
         whether the impedance calculation assumes diffuse or specular scattering
         at the boundaries of the superconductor. Default is ``'diffuse'``.
 
+    verbose : int
+        Whether to print out some debugging information. Very much a work in
+        progress. Default is 0.
+
+        * 0: Don't print out any debugging information
+        * 1: Print out minimal debugging information
+        * 2: Print out full output from quad routines
+
     Returns
     -------
     zs : numpy array
@@ -102,7 +111,7 @@ def get_Z(input_vector, tc, vf, london0, axis='temperature', **kwargs):
     if gap is not None:
         zs_kwargs['gap'] = gap
 
-    verbose = kwargs.pop('verbose', False)
+    verbose = kwargs.pop('verbose', 0)
     zs_kwargs['verbose'] = verbose
     #Optionally can output penetration/skin depth in meters instead of Ohms
     output_depths = kwargs.pop('output_depths', False)
@@ -218,9 +227,13 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
         superconducting penetration depth (imaginary part), both in meters.
         Default is False.
 
-    verbose : bool (optional)
+    verbose : int
         Whether to print out some debugging information. Very much a work in
-        progress. Default is False.
+        progress. Default is 0.
+
+        * 0: Don't print out any debugging information
+        * 1: Print out minimal debugging information
+        * 2: Print out full output from quad routines
 
     Returns
     -------
@@ -234,7 +247,11 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
     #Optionally can output penetration/skin depth in meters instead of Ohms
     output_depths = kwargs.pop('output_depths', False)
 
-    verbose = kwargs.pop('verbose', False)
+    units = 'Ohms'
+    if output_depths:
+        units = 'meters'
+
+    verbose = kwargs.pop('verbose', 0)
     boundary = kwargs.pop('boundary', 'diffuse')
 
     gap = kwargs.pop('gap', deltar_bcs)
@@ -250,21 +267,41 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
         prefactor = fr*x0*sc.mu_0*vf
 
 
-
     k = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose)
+    reK = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose).real
+    imK = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose).imag
+
+    #For passing useful debugging info
+    param_vals_string = "tr=%s, fr=%s, x0=%s, x1=%s, dr=%s, bcs=%s" % (tr, fr, x0, x1, dr, bcs)
 
     if (boundary == 'diffuse') or (boundary == 'd'):
-        reInvZint = lambda x : cm.log(1+k(x)/x**2).real
-        imInvZint = lambda x : cm.log(1+k(x)/x**2).imag
+        #Now separate the integrand into the real and imaginary parts, otherwise
+        #ma.log chokes on trying to figure out the right branch cut
+        #
+        #ln(1+K/x**2) = 0.5*ln((x**2+ReK)**2+ImK**2)-2ln(x) + i*atan(ImK/(x**2+ReK))
 
-        # reInvZ, reInvZerr, _, _ = do_integral(reInvZint, 0, np.inf, verbose=verbose)
-        # imInvZ, imInvZerr, _, _ = do_integral(imInvZint, 0, np.inf, verbose=verbose)
+        reInvZint_a = lambda x : 0.5*ma.log((x**2+reK(x))**2+imK(x)**2)-2*ma.log(x)
+        reInvZint_b = lambda x : 0.5*ma.log((x**2+reK(x))**2+imK(x)**2)
 
-        reInvZ, reInvZerr = sint.quad(reInvZint, 0, np.inf)
-        imInvZ, imInvZerr = sint.quad(imInvZint, 0, np.inf)
+        imInvZint = lambda x : ma.atan2(imK(x),(x**2+reK(x))) #Use atan2 because phase matters
 
+        reInvZ_a, reInvZerr_a = do_integral(reInvZint_a, 1, np.inf, func_name = "Diffuse:reInvZint_a", extra_info=param_vals_string, verbose=verbose)
+        reInvZ_b, reInvZerr_b = do_integral(reInvZint_b, 0, 1, func_name = "Diffuse:reInvZint_b", extra_info=param_vals_string, verbose=verbose)
+
+        reInvZ = reInvZ_a + reInvZ_b + 2
+        reInvZerr = reInvZerr_a + reInvZerr_b
+
+        imInvZ, imInvZerr = do_integral(imInvZint, 0, np.inf, func_name = "Diffuse:imInvZint", extra_info=param_vals_string, verbose=verbose)
 
         invZ = reInvZ + 1j*imInvZ
+
+        #Do an error calc
+        invZ2 = reInvZ**2 + imInvZ**2
+
+        reZerr = 1/invZ2**2 * ma.sqrt(((invZ2-2*reInvZ)*reInvZerr)**2 + (2*imInvZ*imInvZerr)**2)
+        imZerr = 1/invZ2**2 * ma.sqrt(((2*imInvZ-invZ2)*imInvZerr)**2 + (2*reInvZ*reInvZerr)**2)
+
+        Zerr = reZerr+1j*imZerr
 
         Z = 1.0/invZ
 
@@ -272,13 +309,20 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
         reZint = lambda x : (1/(x**2+k(x))).real
         imZint = lambda x : (1/(x**2+k(x))).imag
 
-        # reZ, reZerr, _, _ = do_integral(reZint, -np.inf, np.inf, verbose=verbose)
-        # imZ, imZerr, _, _ = do_integral(imZint, -np.inf, np.inf, verbose=verbose)
+        reZ, reZerr = do_integral(reZint, -np.inf, np.inf, func_name="Specular:reZint", extra_info=param_vals_string, verbose=verbose)
+        imZ, imZerr = do_integral(imZint, -np.inf, np.inf, func_name="Specular:imZint", extra_info=param_vals_string, verbose=verbose)
 
-        reZ, reZerr = sint.quad(reZint, -np.inf, np.inf)
-        imZ, imZerr = sint.quad(imZint, -np.inf, np.inf)
-
+        Zerr = (reZerr+1j*imZerr)/np.pi**2
 
         Z = (reZ + 1j*imZ)/np.pi**2
 
-    return 1.0*prefactor*1j*Z
+    Z *= prefactor*1j
+    Zerr *= prefactor*1j
+
+    if verbose > 0:
+        print "Z = %s %s" % (Z, units)
+        print "fractional error in real part:", Zerr.real/abs(Z.real)
+        print "fractional error in imag part:", Zerr.imag/abs(Z.imag)
+        print "\n"
+
+    return Z
