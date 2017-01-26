@@ -262,8 +262,10 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
 
     #Calculate the prefactor. Mostly this doesn't matter since we care about ratios.
     if output_depths:
+        #Units here are meters
         prefactor = x0*vf*sc.hbar/(delta0*sc.e)
     else:
+        #Units here are Ohms
         prefactor = fr*x0*sc.mu_0*vf
 
 
