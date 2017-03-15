@@ -42,7 +42,7 @@ def fermi_fun(en, temp, units = 'reduced'):
     assert units in known_units, "Unknown units requested."
 
     #Convert temperature to joules
-    if units in ['joules', 'j']
+    if units in ['joules', 'j']:
         kbt = sc.k*temp
 
     #Or eV if desired
