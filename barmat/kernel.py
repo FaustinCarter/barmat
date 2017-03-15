@@ -31,7 +31,7 @@ def reKlint1_a1(args):
     a1 = x0p*e1
     a2 = x0p*e2
 
-    return -2*ma.tanh(-0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+1, x)+u*intS(a2, a1+1, x))
+    return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+1, x)+u*intS(a2, a1+1, x))
 
 @numba.jit("float64(float64[:])")
 def reKlint1_a2(args):
@@ -54,7 +54,7 @@ def reKlint1_a2(args):
     a1 = x0p*e1
     a2 = x0p*e2
 
-    return -2*ma.tanh(-0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(e1*ma.sqrt(u**2+2*dr)))*intR(a2, a1+1, x)+u*intS(a2, a1+1, x))
+    return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(e1*ma.sqrt(u**2+2*dr)))*intR(a2, a1+1, x)+u*intS(a2, a1+1, x))
 
 @numba.jit("float64(float64[:])")
 def reKlint1_b(args):
@@ -77,7 +77,7 @@ def reKlint1_b(args):
     a1 = x0p*e1
     a2 = x0p*e2
 
-    return -2*ma.tanh(-0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+1, x)+u*intS(a2, a1+1, x))
+    return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+1, x)+u*intS(a2, a1+1, x))
 
 @numba.jit("float64(float64[:])")
 def reKlint2_a(args):
@@ -100,7 +100,7 @@ def reKlint2_a(args):
     e2 = ma.sqrt((en+fr)**2-dr**2)
     gfun = (en**2+dr**2+en*fr)/(e1*ma.sqrt(u**2+2*dr))
 
-    return -ma.tanh(-0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(x0p*(e2-e1), 1, x)
+    return ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(x0p*(e2-e1), 1, x)
                                                        -(gfun-u)*intS(x0p*(e2+e1), 1, x))
 
 @numba.jit("float64(float64[:])")
@@ -124,7 +124,7 @@ def reKlint2_b(args):
     e2 = ma.sqrt((en+fr)**2-dr**2)
     gfun = (en**2+dr**2+en*fr)/(ma.sqrt(u**2+2*dr)*e2)
 
-    return -ma.tanh(-0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(x0p*(e2-e1), 1, x)
+    return ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(x0p*(e2-e1), 1, x)
                                                        -(gfun-u)*intS(x0p*(e2+e1), 1, x))
 
 @numba.jit("float64(float64[:])")
@@ -151,10 +151,10 @@ def reKlint3(args):
     e1 = ma.sqrt((en+dr)*(en-dr))
     e2 = ma.sqrt(((en+fr)+dr)*((en+fr)-dr))
     gfun = (en**2+dr**2+en*fr)/(ma.sqrt(u**2+2*dr)*e2)
-    t1 = ma.tanh(-0.5*bcs*en/tr)
-    t2 = ma.tanh(-0.5*bcs*(en+fr)/tr)
+    tplus = ma.tanh(0.5*bcs*en/tr)+ma.tanh(0.5*bcs*(en+fr)/tr)
+    tminus = ma.tanh(0.5*bcs*fr/tr)*(1-ma.tanh(0.5*bcs*en/tr)*ma.tanh(0.5*bcs*(en+fr)/tr))
 
-    return (t1+t2)*(gfun-u)*intS(x0p*(e2+e1), 1, x) + (t1-t2)*(gfun+u)*intS(x0p*(e2-e1), 1, x)
+    return -tplus*(gfun-u)*intS(x0p*(e2+e1), 1, x) + tminus*(gfun+u)*intS(x0p*(e2-e1), 1, x)
 
 @numba.jit("float64(float64[:])")
 def imKlint1_a(args):
@@ -176,7 +176,7 @@ def imKlint1_a(args):
     e2 = ma.sqrt((en+fr)**2-dr**2)
     gfun = (en**2+dr**2+en*fr)/(e1*ma.sqrt(u**2+2*dr))
 
-    return ma.tanh(-0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(x0p*(e2-e1), 1, x)+(gfun-u)*intR(x0p*(e2+e1), 1, x))
+    return -ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(x0p*(e2-e1), 1, x)+(gfun-u)*intR(x0p*(e2+e1), 1, x))
 
 @numba.jit("float64(float64[:])")
 def imKlint1_b(args):
@@ -198,7 +198,7 @@ def imKlint1_b(args):
     e2 = ma.sqrt((en+fr)**2-dr**2)
     gfun = (en**2+dr**2+en*fr)/(ma.sqrt(u**2+2*dr)*e2)
 
-    return ma.tanh(-0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(x0p*(e2-e1), 1, x)+(gfun-u)*intR(x0p*(e2+e1), 1, x))
+    return -ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(x0p*(e2-e1), 1, x)+(gfun-u)*intR(x0p*(e2+e1), 1, x))
 
 @numba.jit("float64(float64[:])")
 def imKlint2(args):
@@ -220,9 +220,9 @@ def imKlint2(args):
     e1 = ma.sqrt(en**2-dr**2)
     e2 = ma.sqrt((en+fr)**2-dr**2)
     gfun = (en**2+dr**2+en*fr)/(ma.sqrt(u**2+2*dr)*e2)
+    tminus = ma.tanh(0.5*bcs*fr/tr)*(1-ma.tanh(0.5*bcs*en/tr)*ma.tanh(0.5*bcs*(en+fr)/tr))
 
-    return ((ma.tanh(-0.5*bcs*en/tr)-ma.tanh(-0.5*bcs*(en+fr)/tr))*((gfun+u)*intR(x0p*(e2-e1), 1, x)
-                                                                +(gfun-u)*intR(x0p*(e2+e1), 1, x)))
+    return tminus*((gfun+u)*intR(x0p*(e2-e1), 1, x)+(gfun-u)*intR(x0p*(e2+e1), 1, x))
 
 
 #Make C-language callbacks from each of the integrand functions for scipy quad
@@ -317,7 +317,7 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=0):
             iargs_f0 = (x, x0/np.pi, tr, dr, bcs,)
 
             #reKl1_a2 = reKl1_b = Fermi*intR*0.25*pi
-            reKl1 = -2*ma.tanh(-0.5*bcs*dr/tr)*intR(0, 1, x)*0.5*ma.pi*dr
+            reKl1 = 2*ma.tanh(0.5*bcs*dr/tr)*intR(0, 1, x)*0.5*ma.pi*dr
             reKl1err = 0
             reKl2 = 0
             reKl2err = 0

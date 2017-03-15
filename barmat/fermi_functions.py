@@ -11,7 +11,7 @@ import numba
 #TODO: Actually implement this function in the kernel.py code.
 
 @numba.jit("float64(float64, float64, string)")
-def fermi_fun(en, temp, units = 'joules'):
+def fermi_fun(en, temp, units = 'reduced'):
     """Calculate the Fermi Function given some energy and some temperature.
 
     Parameters
@@ -26,7 +26,7 @@ def fermi_fun(en, temp, units = 'joules'):
     -----------------
     units : string
         Select units of energy. Acceptable values are ``'joules' or 'eV' or
-        'reduced'``. Default is ``'joules'``. Reduced units means both values
+        'reduced'``. Default is ``'reduced'``. Reduced units means both values
         are unitless, so onus is on the user to ensure that ``en/temp`` gives
         the desired result.
 

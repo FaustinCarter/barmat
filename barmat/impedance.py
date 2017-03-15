@@ -155,6 +155,8 @@ def get_Zvec(input_vector, tc, vf, london0, axis='temperature', **kwargs):
 
 
     else:
+        assert 'mfp' in kwargs, "Must supply mean free path"
+        mfp = kwargs['mfp']
         #Convert physical data to params
         params_dict = init_from_physical_data(tc, vf, london0, mfp, bcs)
 
@@ -285,8 +287,8 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
 
 
     k = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose)
-    reK = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose).real
-    imK = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose).imag
+    # reK = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose).real
+    # imK = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose).imag
 
     #For passing useful debugging info
     param_vals_string = "tr=%s, fr=%s, x0=%s, x1=%s, dr=%s, bcs=%s" % (tr, fr, x0, x1, dr, bcs)
@@ -297,38 +299,54 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
         #
         #ln(1+K/x**2) = 0.5*ln((x**2+ReK)**2+ImK**2)-2ln(x) + i*atan(ImK/(x**2+ReK))
 
-        reInvZint_a = lambda x : 0.5*ma.log((x**2+reK(x))**2+imK(x)**2)-2*ma.log(x)
-        reInvZint_b = lambda x : 0.5*ma.log((x**2+reK(x))**2+imK(x)**2)
+        # reInvZint_a = lambda x : 0.5*ma.log((x**2+reK(x))**2+imK(x)**2)-2*ma.log(x)
+        # reInvZint_b = lambda x : 0.5*ma.log((x**2+reK(x))**2+imK(x)**2)
+        #
+        # imInvZint = lambda x : ma.atan2(imK(x),(x**2+reK(x))) #Use atan2 because phase matters
+        #
+        # reInvZ_a, reInvZerr_a = do_integral(reInvZint_a, 1, np.inf,
+        #                                     func_name = "Diffuse:reInvZint_a",
+        #                                     extra_info=param_vals_string,
+        #                                     verbose=verbose)
+        #
+        # reInvZ_b, reInvZerr_b = do_integral(reInvZint_b, 0, 1,
+        #                                     func_name = "Diffuse:reInvZint_b",
+        #                                     extra_info=param_vals_string,
+        #                                     verbose=verbose)
+        #
+        # reInvZ = reInvZ_a + reInvZ_b + 2
+        # reInvZerr = reInvZerr_a + reInvZerr_b
+        #
+        # imInvZ, imInvZerr = do_integral(imInvZint, 0, np.inf,
+        #                                 func_name = "Diffuse:imInvZint",
+        #                                 extra_info=param_vals_string,
+        #                                 verbose=verbose)
 
-        imInvZint = lambda x : ma.atan2(imK(x),(x**2+reK(x))) #Use atan2 because phase matters
+        reInvZint = lambda x : cm.log(1+k(x)/x**2).real
+        imInvZint = lambda x : cm.log(1+k(x)/x**2).imag
 
-        reInvZ_a, reInvZerr_a = do_integral(reInvZint_a, 1, np.inf,
-                                            func_name = "Diffuse:reInvZint_a",
-                                            extra_info=param_vals_string,
-                                            verbose=verbose)
+        reInvZ, reInvZerr = do_integral(reInvZint, 0, np.inf,
+                                        func_name = "Diffuse:reInvZint",
+                                        extra_info=param_vals_string,
+                                        verbose=verbose)
 
-        reInvZ_b, reInvZerr_b = do_integral(reInvZint_b, 0, 1,
-                                            func_name = "Diffuse:reInvZint_b",
-                                            extra_info=param_vals_string,
-                                            verbose=verbose)
-
-        reInvZ = reInvZ_a + reInvZ_b + 2
-        reInvZerr = reInvZerr_a + reInvZerr_b
 
         imInvZ, imInvZerr = do_integral(imInvZint, 0, np.inf,
                                         func_name = "Diffuse:imInvZint",
                                         extra_info=param_vals_string,
                                         verbose=verbose)
 
+
+
         invZ = reInvZ + 1j*imInvZ
-
-        #Do an error calc
-        invZ2 = reInvZ**2 + imInvZ**2
-
-        reZerr = 1/invZ2**2 * ma.sqrt(((invZ2-2*reInvZ)*reInvZerr)**2 + (2*imInvZ*imInvZerr)**2)
-        imZerr = 1/invZ2**2 * ma.sqrt(((2*imInvZ-invZ2)*imInvZerr)**2 + (2*reInvZ*reInvZerr)**2)
-
-        Zerr = reZerr+1j*imZerr
+        #
+        # #Do an error calc
+        # invZ2 = reInvZ**2 + imInvZ**2
+        #
+        # reZerr = 1/invZ2**2 * ma.sqrt(((invZ2-2*reInvZ)*reInvZerr)**2 + (2*imInvZ*imInvZerr)**2)
+        # imZerr = 1/invZ2**2 * ma.sqrt(((2*imInvZ-invZ2)*imInvZerr)**2 + (2*reInvZ*reInvZerr)**2)
+        #
+        # Zerr = reZerr+1j*imZerr
 
         Z = 1.0/invZ
 
@@ -351,12 +369,12 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
         Z = (reZ + 1j*imZ)/np.pi**2
 
     Z *= prefactor*1j
-    Zerr *= prefactor*1j
+    # Zerr *= prefactor*1j
 
-    if verbose > 0:
-        print "Z = %s %s" % (Z, units)
-        print "fractional error in real part:", Zerr.real/abs(Z.real)
-        print "fractional error in imag part:", Zerr.imag/abs(Z.imag)
-        print "\n"
+    # if verbose > 0:
+    #     print "Z = %s %s" % (Z, units)
+    #     print "fractional error in real part:", Zerr.real/abs(Z.real)
+    #     print "fractional error in imag part:", Zerr.imag/abs(Z.imag)
+    #     print "\n"
 
     return Z
