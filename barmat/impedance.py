@@ -113,7 +113,7 @@ def get_Zvec(input_vector, tc, vf, london0, axis='temperature', **kwargs):
     gap = kwargs.pop('gap', None)
     if gap is not None:
         if gap == 'cos':
-            zs_kwargs = deltar_cos
+            zs_kwargs['gap'] = deltar_cos
         else:
             zs_kwargs['gap'] = gap
 
