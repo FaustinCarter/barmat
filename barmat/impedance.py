@@ -180,7 +180,7 @@ def get_Zvec(input_vector, tc, vf, london0, axis='temperature', **kwargs):
     return zs
 
 
-def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
+def cmplx_impedance(tr, fr, tc, xk, xm, vf, **kwargs):
     r"""Calculate the complex surface impedance (Z) of a superconductor at a
     given temperature and frequency.
 
@@ -195,13 +195,13 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
         frequency in Hz, and delta0 is the zero-temperature superconducting
         energy gap.
 
-    x0 : float
-        Mean free path (mfp) divided by the BCS coherence length (ksi0). ksi0 =
+    xk : float
+        BCS coherence length (ksi0) divided by mean free path (mfp). ksi0 =
         hbar*vf/(pi*delta0), where hbar is Planck's constant divided by 2*pi, vf
         is the Fermi velocity, and delta0 is the zero-temprature superconducting
         energy gap.
 
-    x1 : float
+    xm : float
         Mean free path (mfp) divided by the zero-temperature London penetration
         depth (london0).
 
@@ -280,18 +280,18 @@ def cmplx_impedance(tr, fr, tc, x0, x1, vf, **kwargs):
     #Calculate the prefactor. Mostly this doesn't matter since we care about ratios.
     if output_depths:
         #Units here are meters
-        prefactor = x0*vf*sc.hbar/(delta0*sc.e)
+        prefactor = vf*sc.hbar/(xk*delta0*sc.e)
     else:
         #Units here are Ohms
-        prefactor = fr*x0*sc.mu_0*vf
+        prefactor = fr*sc.mu_0*vf/xk
 
 
-    k = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose)
+    k = lambda x : cmplx_kernel(tr, fr, x, xk, xm, dr, bcs, verbose=verbose)
     # reK = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose).real
     # imK = lambda x : cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=verbose).imag
 
     #For passing useful debugging info
-    param_vals_string = "tr=%s, fr=%s, x0=%s, x1=%s, dr=%s, bcs=%s" % (tr, fr, x0, x1, dr, bcs)
+    param_vals_string = "tr=%s, fr=%s, xk=%s, xm=%s, dr=%s, bcs=%s" % (tr, fr, xk, xm, dr, bcs)
 
     if (boundary == 'diffuse') or (boundary == 'd'):
         #Now separate the integrand into the real and imaginary parts, otherwise
