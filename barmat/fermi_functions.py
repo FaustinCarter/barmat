@@ -35,14 +35,14 @@ def fermi_fun(en, temp, units = 'reduced'):
     ffun : float
         The Fermi Function at en and temp."""
 
-    known_units = [ 'Joules', 'joules', 'j', #Joules
+    known_units = [ 'Joules', 'joules', 'j', 'J', #Joules
                     'eV', 'ev', 'e', #Electron Volts
                     'reduced', 'r']  #Unitless proxys
 
     assert units in known_units, "Unknown units requested."
 
     #Convert temperature to joules
-    if units in ['joules', 'j']:
+    if units in ['Joules', 'joules', 'j', 'J']:
         kbt = sc.k*temp
 
     #Or eV if desired
