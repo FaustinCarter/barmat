@@ -6,7 +6,7 @@ import numba
 
 @numba.jit("float64(float64, float64, float64)")
 def intR(a, b, x):
-    r"""Calculate the R integral from Popel divided by x, (x = q*l, l = mean free path).
+    r"""Calculate the R integral from Popel divided by x, (x = q*L0, L0 = zero-temp London depth).
 
     Parameters
     ----------
@@ -48,7 +48,7 @@ def intR(a, b, x):
 
 @numba.jit("float64(float64, float64, float64)")
 def intS(a, b, x):
-    r"""Calculate the R integral from Popel divided by x, (x = q*l, l = mean free path).
+    r"""Calculate the R integral from Popel divided by x, (x = q*L0, L0 = zero-temp London depth).
 
     Parameters
     ----------

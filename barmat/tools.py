@@ -88,8 +88,9 @@ def init_from_physical_data(tc, vf, london0, mfp, bcs=1.76, ksi0=None, delta0=No
     else:
         ksi0_calc = vf*sc.hbar/(sc.pi*delta0*sc.e)
 
-    x0 = mfp/ksi0
-    x1 = mfp/london0
+    #Reduced lengths
+    xk = ksi0/london0
+    xm = mfp/london0
 
     if verbose > 1:
         if ksi0_calc is not None:
@@ -99,14 +100,14 @@ def init_from_physical_data(tc, vf, london0, mfp, bcs=1.76, ksi0=None, delta0=No
             print "calculated ksi0 = " + str(ksi0*1e9)+" nm"
 
         print "calculated delta0 = " + str(delta0*1e6) + " ueV"
-        print "x0 = mfp/ksi0 = " + str(x0)
-        print "x1 = mfp/london0 = " + str(x1)
-        print "x1/x0 = ksi0/london0 = " + str(x1/x0)
+        print "xk = ksi0/london0 = " + str(xk)
+        print "xm = mfp/london0 = " + str(xm)
+        print "xk/xm = ksi0/mfp = " + str(xk/xm)
 
     output_dict = {'bcs':bcs,
                     'vf':vf,
-                    'x0':x0,
-                    'x1':x1}
+                    'xk':xk,
+                    'xm':xm}
 
     return output_dict
 
@@ -142,7 +143,7 @@ def do_integral(int_fun, a, b, iargs=None, **kwargs):
                     func_name = int_fun.__name__
                 except AttributeError:
                     func_name = 'Unknown name'
-                    
+
             if verbose > 0:
                 print func_name
                 if extra_info is not None:

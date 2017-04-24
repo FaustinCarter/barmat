@@ -19,19 +19,20 @@ def reKlint1_a1(args):
 
     u = args[0]
     x = args[1]
-    x0p = args[2]
-    tr = args[3]
-    fr = args[4]
-    dr = args[5]
-    bcs = args[6]
+    a0 = args[2]
+    b0 = args[3]
+    tr = args[4]
+    fr = args[5]
+    dr = args[6]
+    bcs = args[7]
 
     en = u**2-dr
     e1 = u*ma.sqrt(2*dr-u**2)
     e2 = ma.sqrt((en+fr)**2-dr**2)
-    a1 = x0p*e1
-    a2 = x0p*e2
+    a1 = a0*e1
+    a2 = a0*e2
 
-    return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+1, x)+u*intS(a2, a1+1, x))
+    return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+b0, x)+u*intS(a2, a1+b0, x))
 
 @numba.jit("float64(float64[:])")
 def reKlint1_a2(args):
@@ -42,19 +43,20 @@ def reKlint1_a2(args):
 
     u = args[0]
     x = args[1]
-    x0p = args[2]
-    tr = args[3]
-    fr = args[4]
-    dr = args[5]
-    bcs = args[6]
+    a0 = args[2]
+    b0 = args[3]
+    tr = args[4]
+    fr = args[5]
+    dr = args[6]
+    bcs = args[7]
 
     en = u**2-fr+dr
     e1 = ma.sqrt(abs(en**2-dr**2))
     e2 = u*ma.sqrt(u**2+2*dr)
-    a1 = x0p*e1
-    a2 = x0p*e2
+    a1 = a0*e1
+    a2 = a0*e2
 
-    return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(e1*ma.sqrt(u**2+2*dr)))*intR(a2, a1+1, x)+u*intS(a2, a1+1, x))
+    return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(e1*ma.sqrt(u**2+2*dr)))*intR(a2, a1+b0, x)+u*intS(a2, a1+b0, x))
 
 @numba.jit("float64(float64[:])")
 def reKlint1_b(args):
@@ -65,19 +67,20 @@ def reKlint1_b(args):
 
     u = args[0]
     x = args[1]
-    x0p = args[2]
-    tr = args[3]
-    fr = args[4]
-    dr = args[5]
-    bcs = args[6]
+    a0 = args[2]
+    b0 = args[3]
+    tr = args[4]
+    fr = args[5]
+    dr = args[6]
+    bcs = args[7]
 
     en = dr-u**2
     e1 = u*ma.sqrt(2*dr-u**2)
     e2 = ma.sqrt((en+fr)**2-dr**2)
-    a1 = x0p*e1
-    a2 = x0p*e2
+    a1 = a0*e1
+    a2 = a0*e2
 
-    return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+1, x)+u*intS(a2, a1+1, x))
+    return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+b0, x)+u*intS(a2, a1+b0, x))
 
 @numba.jit("float64(float64[:])")
 def reKlint2_a(args):
@@ -88,11 +91,12 @@ def reKlint2_a(args):
 
     u = args[0]
     x = args[1]
-    x0p = args[2]
-    tr = args[3]
-    fr = args[4]
-    dr = args[5]
-    bcs = args[6]
+    a0 = args[2]
+    b0 = args[3]
+    tr = args[4]
+    fr = args[5]
+    dr = args[6]
+    bcs = args[7]
 
     en = u**2-fr+dr
 
@@ -100,8 +104,8 @@ def reKlint2_a(args):
     e2 = ma.sqrt((en+fr)**2-dr**2)
     gfun = (en**2+dr**2+en*fr)/(e1*ma.sqrt(u**2+2*dr))
 
-    return ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(x0p*(e2-e1), 1, x)
-                                                       -(gfun-u)*intS(x0p*(e2+e1), 1, x))
+    return ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(a0*(e2-e1), b0, x)
+                                                       -(gfun-u)*intS(a0*(e2+e1), b0, x))
 
 @numba.jit("float64(float64[:])")
 def reKlint2_b(args):
@@ -112,11 +116,12 @@ def reKlint2_b(args):
 
     u = args[0]
     x = args[1]
-    x0p = args[2]
-    tr = args[3]
-    fr = args[4]
-    dr = args[5]
-    bcs = args[6]
+    a0 = args[2]
+    b0 = args[3]
+    tr = args[4]
+    fr = args[5]
+    dr = args[6]
+    bcs = args[7]
 
     en = -u**2-dr
 
@@ -124,8 +129,8 @@ def reKlint2_b(args):
     e2 = ma.sqrt((en+fr)**2-dr**2)
     gfun = (en**2+dr**2+en*fr)/(ma.sqrt(u**2+2*dr)*e2)
 
-    return ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(x0p*(e2-e1), 1, x)
-                                                       -(gfun-u)*intS(x0p*(e2+e1), 1, x))
+    return ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(a0*(e2-e1), b0, x)
+                                                       -(gfun-u)*intS(a0*(e2+e1), b0, x))
 
 @numba.jit("float64(float64[:])")
 def reKlint3(args):
@@ -136,13 +141,16 @@ def reKlint3(args):
 
     u = args[0]
     x = args[1]
-    x0p = args[2]
-    tr = args[3]
-    fr = args[4]
-    dr = args[5]
-    bcs = args[6]
+    a0 = args[2]
+    b0 = args[3]
+    tr = args[4]
+    fr = args[5]
+    dr = args[6]
+    bcs = args[7]
 
     #Fixes the divide by zero error nicely
+    #The right way to do this is to recognize that intS goes to zero like 'a' as 'a'->0.
+    #This leading behavior cancels out the part that makes the integrand blow up at the lower limit.
     if (fr == 0) and (u**2/dr < 0.01):
         en = dr*(1+1e-2)
     else:
@@ -154,7 +162,7 @@ def reKlint3(args):
     tplus = ma.tanh(0.5*bcs*en/tr)+ma.tanh(0.5*bcs*(en+fr)/tr)
     tminus = ma.tanh(0.5*bcs*fr/tr)*(1-ma.tanh(0.5*bcs*en/tr)*ma.tanh(0.5*bcs*(en+fr)/tr))
 
-    return -tplus*(gfun-u)*intS(x0p*(e2+e1), 1, x) + tminus*(gfun+u)*intS(x0p*(e2-e1), 1, x)
+    return -tplus*(gfun-u)*intS(a0*(e2+e1), b0, x) + tminus*(gfun+u)*intS(a0*(e2-e1), b0, x)
 
 @numba.jit("float64(float64[:])")
 def imKlint1_a(args):
@@ -164,11 +172,12 @@ def imKlint1_a(args):
 
     u = args[0]
     x = args[1]
-    x0p = args[2]
-    tr = args[3]
-    fr = args[4]
-    dr = args[5]
-    bcs = args[6]
+    a0 = args[2]
+    b0 = args[3]
+    tr = args[4]
+    fr = args[5]
+    dr = args[6]
+    bcs = args[7]
 
     en = u**2-fr+dr
 
@@ -176,7 +185,7 @@ def imKlint1_a(args):
     e2 = ma.sqrt((en+fr)**2-dr**2)
     gfun = (en**2+dr**2+en*fr)/(e1*ma.sqrt(u**2+2*dr))
 
-    return -ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(x0p*(e2-e1), 1, x)+(gfun-u)*intR(x0p*(e2+e1), 1, x))
+    return -ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(a0*(e2-e1), b0, x)+(gfun-u)*intR(a0*(e2+e1), b0, x))
 
 @numba.jit("float64(float64[:])")
 def imKlint1_b(args):
@@ -186,11 +195,12 @@ def imKlint1_b(args):
 
     u = args[0]
     x = args[1]
-    x0p = args[2]
-    tr = args[3]
-    fr = args[4]
-    dr = args[5]
-    bcs = args[6]
+    a0 = args[2]
+    b0 = args[3]
+    tr = args[4]
+    fr = args[5]
+    dr = args[6]
+    bcs = args[7]
 
     en = -u**2-dr
 
@@ -198,7 +208,7 @@ def imKlint1_b(args):
     e2 = ma.sqrt((en+fr)**2-dr**2)
     gfun = (en**2+dr**2+en*fr)/(ma.sqrt(u**2+2*dr)*e2)
 
-    return -ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(x0p*(e2-e1), 1, x)+(gfun-u)*intR(x0p*(e2+e1), 1, x))
+    return -ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(a0*(e2-e1), b0, x)+(gfun-u)*intR(a0*(e2+e1), b0, x))
 
 @numba.jit("float64(float64[:])")
 def imKlint2(args):
@@ -209,11 +219,12 @@ def imKlint2(args):
 
     u = args[0]
     x = args[1]
-    x0p = args[2]
-    tr = args[3]
-    fr = args[4]
-    dr = args[5]
-    bcs = args[6]
+    a0 = args[2]
+    b0 = args[3]
+    tr = args[4]
+    fr = args[5]
+    dr = args[6]
+    bcs = args[7]
 
     en = u**2+dr
 
@@ -222,7 +233,7 @@ def imKlint2(args):
     gfun = (en**2+dr**2+en*fr)/(ma.sqrt(u**2+2*dr)*e2)
     tminus = ma.tanh(0.5*bcs*fr/tr)*(1-ma.tanh(0.5*bcs*en/tr)*ma.tanh(0.5*bcs*(en+fr)/tr))
 
-    return tminus*((gfun+u)*intR(x0p*(e2-e1), 1, x)+(gfun-u)*intR(x0p*(e2+e1), 1, x))
+    return tminus*((gfun+u)*intR(a0*(e2-e1), b0, x)+(gfun-u)*intR(a0*(e2+e1), b0, x))
 
 
 #Make C-language callbacks from each of the integrand functions for scipy quad
@@ -239,7 +250,7 @@ c_imKlint1_b = wrap_for_numba(imKlint1_b)
 c_imKlint2 = wrap_for_numba(imKlint2)
 
 
-def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=0):
+def cmplx_kernel(tr, fr, x, xk, xm, dr, bcs, verbose=0):
     r"""Calculate the Kl integral over energy. Kl = K*mfp^2 where K is the Mattis-Bardeen Kernel.
 
     Parameters
@@ -254,13 +265,15 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=0):
         Reduced momentum x = q*mfp where mfp is mean-free-path and q is the
         coordinate resulting from a fourier transform of position.
 
-    x0 : float
-        Inverse reduced BCS coherence length x0 = mfp/ksi0, where ksi0 is BCS
-        coherence length and mfp is mean free path.
+    xk : float
+        BCS coherence length (ksi0) divided by mean free path (mfp). ksi0 =
+        hbar*vf/(pi*delta0), where hbar is Planck's constant divided by 2*pi, vf
+        is the Fermi velocity, and delta0 is the zero-temprature superconducting
+        energy gap.
 
-    x1 : float
-        Inverse reduced London penetration depth x1 = mfp/L0 where L0 is the
-        London penetration depth at T=0 and mfp is mean free path.
+    xm : float
+        Mean free path (mfp) divided by the zero-temperature London penetration
+        depth (london0).
 
     dr : float
         Reduced BCS energy gap dr = delta(T)/delta(T=0) where delta is the
@@ -283,6 +296,11 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=0):
     ----
     See Mattis and Bardeen (1958), Pöpel (1989), or Gao (2008)."""
 
+    #a0 and b0
+    a0 = 1.0/(xk*np.pi)
+
+    b0 = 1.0/xm
+
 
     #Hackish way to make sure there are no divide by zero errors.
     if tr == 0:
@@ -294,18 +312,18 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=0):
     if tr >= 1:
 
         #Calculate the actual number out front (1/x dependance included in R and S)
-        prefactor = (3/np.pi)*fr*x0*x1**2
+        prefactor = 3*fr*a0
 
-        reKl = intS(fr*x0/np.pi, 1, x)
-        imKl = intR(fr*x0/np.pi, 1, x)
+        reKl = intS(fr*a0, b0, x)
+        imKl = intR(fr*a0, b0, x)
 
 
     else:
         #arguments to pass the integrand functions
-        iargs = (x, x0/np.pi, tr, fr, dr, bcs,)
+        iargs = (x, a0, b0, tr, fr, dr, bcs,)
 
         #Calculate the actual number out front (1/x dependance included in R and S)
-        prefactor = (3/np.pi)*x0*x1**2
+        prefactor = 3*a0
 
         #Now run the integrals
 
@@ -314,10 +332,8 @@ def cmplx_kernel(tr, fr, x, x0, x1, dr, bcs, verbose=0):
             #contribute. reKl1_a2 and reKl1_b have an analytic expression,
             #and reKl3 has a limit built into it.
 
-            iargs_f0 = (x, x0/np.pi, tr, dr, bcs,)
-
             #reKl1_a2 = reKl1_b = Fermi*intR*0.25*pi
-            reKl1 = 2*ma.tanh(0.5*bcs*dr/tr)*intR(0, 1, x)*0.5*ma.pi*dr
+            reKl1 = 2*ma.tanh(0.5*bcs*dr/tr)*intR(0, b0, x)*0.5*ma.pi*dr
             reKl1err = 0
             reKl2 = 0
             reKl2err = 0
