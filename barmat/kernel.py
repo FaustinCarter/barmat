@@ -262,8 +262,9 @@ def cmplx_kernel(tr, fr, x, xk, xm, dr, bcs, verbose=0):
         Reduced frequency fr = h*f/delta0
 
     x : float
-        Reduced momentum x = q*mfp where mfp is mean-free-path and q is the
-        coordinate resulting from a fourier transform of position.
+        Reduced momentum x = q*london0 where london0 is the zero-temperature
+        London penetration depth and q is the coordinate resulting from a
+        fourier transform of position.
 
     xk : float
         BCS coherence length (ksi0) divided by mean free path (mfp). ksi0 =
@@ -288,9 +289,10 @@ def cmplx_kernel(tr, fr, x, xk, xm, dr, bcs, verbose=0):
     Returns
     -------
     Kl : complex float
-        Kl = K*mfp**2 where K is the complex Mattis-Bardeen Kernel as a function
-        of x = q*mfp, mfp is the mean free path and q is the
-        coordinate resulting from a fourier transform of position.
+        Kl = K*london0**2 where K is the complex Mattis-Bardeen Kernel as a
+        function of x = q*london0, london0 is the zero-temperature London
+        penetration depth and q is the coordinate resulting from a fourier
+        transform of position.
 
     Note
     ----
