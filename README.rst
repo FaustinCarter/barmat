@@ -21,11 +21,12 @@ Step 2: Install locally with::
 
 Known Issues:
 -------------
-There is something weird about running barmat under Windows 10 (and maybe other
-versions). In Windows 10 with Anaconda, huge floating point errors have been
-noted. However, running within Ubuntu Bash on the Windows 10 Subystem for Linux
-with Anaconda 2 presents no problems. OSX is also fine. See Issue #1 in the
-github tracker.
+There may be issues with running barmat on Windows. This will definitely be
+true if you are using Anaconda on Windows. To fix the problem, uninstall numpy
+and scipy (on conda use `conda remove --force` to keep things that depend on
+numpy and scipy from getting removed also). Then reinstall numpy and scipy (in
+that order) from http://www.lfd.uci.edu/%7Egohlke/pythonlibs/. Barmat should
+work fine after that!
 
 License:
 --------
