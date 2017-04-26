@@ -339,14 +339,17 @@ def cmplx_impedance(tr, fr, tc, xk, xm, vf, **kwargs):
 
 
         invZ = reInvZ + 1j*imInvZ
-        #
-        # #Do an error calc
-        # invZ2 = reInvZ**2 + imInvZ**2
-        #
-        # reZerr = 1/invZ2**2 * ma.sqrt(((invZ2-2*reInvZ)*reInvZerr)**2 + (2*imInvZ*imInvZerr)**2)
-        # imZerr = 1/invZ2**2 * ma.sqrt(((2*imInvZ-invZ2)*imInvZerr)**2 + (2*reInvZ*reInvZerr)**2)
-        #
-        # Zerr = reZerr+1j*imZerr
+
+        #Do an error calc
+        invZ2 = reInvZ**2 + imInvZ**2
+
+        if invZ2 == 0:
+            Zerr = 0
+        else:
+            reZerr = 1/invZ2**2 * ma.sqrt(((invZ2-2*reInvZ)*reInvZerr)**2 + (2*imInvZ*imInvZerr)**2)
+            imZerr = 1/invZ2**2 * ma.sqrt(((2*imInvZ-invZ2)*imInvZerr)**2 + (2*reInvZ*reInvZerr)**2)
+
+            Zerr = reZerr+1j*imZerr
 
         Z = 1.0/invZ
 
@@ -369,12 +372,15 @@ def cmplx_impedance(tr, fr, tc, xk, xm, vf, **kwargs):
         Z = (reZ + 1j*imZ)/np.pi**2
 
     Z *= prefactor*1j
-    # Zerr *= prefactor*1j
+    Zerr *= prefactor*1j
 
-    # if verbose > 0:
-    #     print "Z = %s %s" % (Z, units)
-    #     print "fractional error in real part:", Zerr.real/abs(Z.real)
-    #     print "fractional error in imag part:", Zerr.imag/abs(Z.imag)
-    #     print "\n"
+    if verbose > 0:
+        print "Z = %s %s" % (Z, units)
+        if (Z.real == 0) and (Z.imag == 0):
+            print "No error, identically zero"
+        else:
+            print "fractional error in real part:", Zerr.real/abs(Z.real)
+            print "fractional error in imag part:", Zerr.imag/abs(Z.imag)
+        print "\n"
 
     return Z
