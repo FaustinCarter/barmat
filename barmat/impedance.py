@@ -11,6 +11,21 @@ from .tools import do_integral, init_from_physical_data
 from .kernel import cmplx_kernel
 from .gap_functions import deltar_bcs, deltar_cos
 
+from multiprocessing import cpu_count
+
+
+#Check to seeif multicore will work
+num_cores = cpu_count()
+
+if num_cores > 1:
+    try:
+        from joblib import Parallel, delayed
+        HAS_JOBLIB = True
+    except:
+        HAS_JOBLIB = False
+else:
+    HAS_JOBLIB = False
+
 __all__ = [ 'get_Zvec',
             'cmplx_impedance']
 
@@ -137,17 +152,33 @@ def get_Zvec(input_vector, tc, vf, london0, axis='temperature', **kwargs):
 
         mfps = input_vector
 
-        zs = []
+        #Do some basic parallelization (speeds up by factor of two-ish)
+        if HAS_JOBLIB:
+            def get_zVec_inner(mfp):
+                #Convert physical data to params
+                params_dict = init_from_physical_data(tc, vf, london0, mfp, bcs)
 
-        for mfp in mfps:
-            #Convert physical data to params
-            params_dict = init_from_physical_data(tc, vf, london0, mfp, bcs)
+                #Add the parameters from physical data into the kwargs dict
+                zs_kwargs.update(params_dict)
 
-            #Add the parameters from physical data into the kwargs dict
-            zs_kwargs.update(params_dict)
+                #Calculate the next impedance
+                return cmplx_impedance(tr, fr, tc, **zs_kwargs)
 
-            #Calculate the next impedance
-            zs.append(cmplx_impedance(tr, fr, tc, **zs_kwargs))
+            zs = Parallel(n_jobs = num_cores)(delayed(get_zVec_inner)(mfp) for mfp in mfps)
+
+        else:
+
+            zs = []
+
+            for mfp in mfps:
+                #Convert physical data to params
+                params_dict = init_from_physical_data(tc, vf, london0, mfp, bcs)
+
+                #Add the parameters from physical data into the kwargs dict
+                zs_kwargs.update(params_dict)
+
+                #Calculate the next impedance
+                zs.append(cmplx_impedance(tr, fr, tc, **zs_kwargs))
 
         #Convert to numpy array
         zs = np.asarray(zs)
@@ -168,14 +199,22 @@ def get_Zvec(input_vector, tc, vf, london0, axis='temperature', **kwargs):
             fr = kwargs['fr']
 
             trs = input_vector
-            zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for tr in trs])
+
+            if HAS_JOBLIB:
+                zs = Parallel(n_jobs = num_cores)(delayed(cmplx_impedance)(tr, fr, tc, **zs_kwargs) for tr in trs)
+            else:
+                zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for tr in trs])
 
         if axis in ['frequency', 'f']:
             assert 'tr' in kwargs, "Must supply reduced temperature"
             tr = kwargs['tr']
 
             frs = np.asarray(input_vector)
-            zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for fr in frs])
+
+            if HAS_JOBLIB:
+                zs = Parallel(n_jobs = num_cores)(delayed(cmplx_impedance)(tr, fr, tc, **zs_kwargs) for fr in frs)
+            else:
+                zs = np.array([cmplx_impedance(tr, fr, tc, **zs_kwargs) for fr in frs])
 
     return zs
 
