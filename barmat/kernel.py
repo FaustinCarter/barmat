@@ -10,7 +10,7 @@ from .volume_integrals import intR, intS
 from .tools import wrap_for_numba, do_integral
 
 
-@numba.jit("float64(float64[:])")
+@numba.jit("float64(float64[:])", nopython=True)
 def reKlint1_a1(args):
     r"""Energy integral of real part of K, limits -dr to 0."""
     #u-substitution, u**2 = en+dr
@@ -34,7 +34,7 @@ def reKlint1_a1(args):
 
     return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+b0, x)+u*intS(a2, a1+b0, x))
 
-@numba.jit("float64(float64[:])")
+@numba.jit("float64(float64[:])", nopython=True)
 def reKlint1_a2(args):
     r"""Energy integral of real part of K, limits dr-fr to dr-0.5*fr."""
     #u-substitution, u**2 = (en+fr)-dr
@@ -58,7 +58,7 @@ def reKlint1_a2(args):
 
     return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(e1*ma.sqrt(u**2+2*dr)))*intR(a2, a1+b0, x)+u*intS(a2, a1+b0, x))
 
-@numba.jit("float64(float64[:])")
+@numba.jit("float64(float64[:])", nopython=True)
 def reKlint1_b(args):
     r"""Energy integral of real part of K, limits are max(0, dr-0.5*fr) to dr."""
     #u-substitution, u**2 = dr-en
@@ -82,7 +82,7 @@ def reKlint1_b(args):
 
     return 2*ma.tanh(0.5*bcs*(en+fr)/tr)*(((en**2+dr**2+en*fr)/(ma.sqrt(2*dr-u**2)*e2))*intR(a2, a1+b0, x)+u*intS(a2, a1+b0, x))
 
-@numba.jit("float64(float64[:])")
+@numba.jit("float64(float64[:])", nopython=True)
 def reKlint2_a(args):
     r"""Energy integral of real part of K, limits are dr-fr to -fr/2."""
     #u-substitution, u**2 = en+fr-dr
@@ -107,7 +107,7 @@ def reKlint2_a(args):
     return ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(a0*(e2-e1), b0, x)
                                                        -(gfun-u)*intS(a0*(e2+e1), b0, x))
 
-@numba.jit("float64(float64[:])")
+@numba.jit("float64(float64[:])", nopython=True)
 def reKlint2_b(args):
     """Energy integral of real part of K, limits are -fr/2 to -dr."""
     #u-substitution, u**2 = -en-dr
@@ -132,7 +132,7 @@ def reKlint2_b(args):
     return ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intS(a0*(e2-e1), b0, x)
                                                        -(gfun-u)*intS(a0*(e2+e1), b0, x))
 
-@numba.jit("float64(float64[:])")
+@numba.jit("float64(float64[:])", nopython=True)
 def reKlint3(args):
     r"""Energy integral of real part of K, limits are dr to infinity."""
     #u-substitution, u**2 = en-dr
@@ -164,7 +164,7 @@ def reKlint3(args):
 
     return -tplus*(gfun-u)*intS(a0*(e2+e1), b0, x) + tminus*(gfun+u)*intS(a0*(e2-e1), b0, x)
 
-@numba.jit("float64(float64[:])")
+@numba.jit("float64(float64[:])", nopython=True)
 def imKlint1_a(args):
     r"""Energy integral of imaginary part of K, limits are dr-fr to -dr."""
     #from dr-fr to -dr
@@ -187,7 +187,7 @@ def imKlint1_a(args):
 
     return -ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(a0*(e2-e1), b0, x)+(gfun-u)*intR(a0*(e2+e1), b0, x))
 
-@numba.jit("float64(float64[:])")
+@numba.jit("float64(float64[:])", nopython=True)
 def imKlint1_b(args):
     r"""Energy integral of imaginary part of K, limits are dr-fr to -dr."""
     #from dr-fr to -dr
@@ -210,7 +210,7 @@ def imKlint1_b(args):
 
     return -ma.tanh(0.5*bcs*(en+fr)/tr)*((gfun+u)*intR(a0*(e2-e1), b0, x)+(gfun-u)*intR(a0*(e2+e1), b0, x))
 
-@numba.jit("float64(float64[:])")
+@numba.jit("float64(float64[:])", nopython=True)
 def imKlint2(args):
     r"""Energy integral of imaginary part of K, limits are dr to infinity."""
     #u-substitution, u**2 = en-dr
@@ -346,8 +346,8 @@ def cmplx_kernel(tr, fr, x, xk, xm, dr, bcs, verbose=0):
 
         elif (fr/dr < 2):
             #from (dr-fr) to dr (inside the gap), limits look wierd due to u-substitution
-            reKl1a, reKl1aerr = do_integral(c_reKlint1_a2.ctypes, 0, ma.sqrt(0.5*fr), iargs)
-            reKl1b, reKl1berr = do_integral(c_reKlint1_b.ctypes, 0, ma.sqrt(0.5*fr), iargs)
+            reKl1a, reKl1aerr = do_integral(c_reKlint1_a2, 0, ma.sqrt(0.5*fr), iargs)
+            reKl1b, reKl1berr = do_integral(c_reKlint1_b, 0, ma.sqrt(0.5*fr), iargs)
 
             reKl1 = reKl1a + reKl1b
             reKl1err = reKl1aerr + reKl1berr
@@ -361,21 +361,21 @@ def cmplx_kernel(tr, fr, x, xk, xm, dr, bcs, verbose=0):
         else:
             #from -dr to dr (inside the gap), limits look wierd due to u-substitution
 
-            reKl1a, reKl1aerr = do_integral(c_reKlint1_a1.ctypes, 0, ma.sqrt(dr), iargs)
-            reKl1b, reKl1berr = do_integral(c_reKlint1_b.ctypes, 0, ma.sqrt(dr), iargs)
+            reKl1a, reKl1aerr = do_integral(c_reKlint1_a1, 0, ma.sqrt(dr), iargs)
+            reKl1b, reKl1berr = do_integral(c_reKlint1_b, 0, ma.sqrt(dr), iargs)
 
             reKl1 = reKl1a + reKl1b
             reKl1err = reKl1aerr + reKl1berr
 
             #from dr-fr to -dr (below the gap), limits look wierd due to u-substitution
-            reKl2a, reKl2aerr = do_integral(c_reKlint2_a.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs)
-            reKl2b, reKl2berr = do_integral(c_reKlint2_b.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs)
+            reKl2a, reKl2aerr = do_integral(c_reKlint2_a, 0, ma.sqrt(0.5*fr-dr), iargs)
+            reKl2b, reKl2berr = do_integral(c_reKlint2_b, 0, ma.sqrt(0.5*fr-dr), iargs)
 
             reKl2 = reKl2a+reKl2b
             reKl2err = reKl2aerr+reKl2berr
 
-            imKl1a, imKl1aerr = do_integral(c_imKlint1_a.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs)
-            imKl1b, imKl1berr = do_integral(c_imKlint1_b.ctypes, 0, ma.sqrt(0.5*fr-dr), iargs)
+            imKl1a, imKl1aerr = do_integral(c_imKlint1_a, 0, ma.sqrt(0.5*fr-dr), iargs)
+            imKl1b, imKl1berr = do_integral(c_imKlint1_b, 0, ma.sqrt(0.5*fr-dr), iargs)
 
             imKl1 = imKl1a+imKl1b
             imKl1err = imKl1aerr+imKl1berr
@@ -385,8 +385,8 @@ def cmplx_kernel(tr, fr, x, xk, xm, dr, bcs, verbose=0):
 
         #from dr to infinity (above the gap), limits look wierd due to u-substitution
         #Wierd things happen numerically at infinity. 31.6 is far enough. equals about 1000 gaps.
-        reKl3, reKl3err = do_integral(c_reKlint3.ctypes, 0, 31.6, iargs)
-        imKl2, imKl2err = do_integral(c_imKlint2.ctypes, 0, np.inf, iargs)
+        reKl3, reKl3err = do_integral(c_reKlint3, 0, 31.6, iargs)
+        imKl2, imKl2err = do_integral(c_imKlint2, 0, np.inf, iargs)
 
         reKl = reKl1+reKl2+reKl3
         imKl = imKl1+imKl2

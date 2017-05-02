@@ -8,6 +8,13 @@ import scipy.constants as sc
 import ctypes as ct
 import pprint
 
+#As of scipy 0.19, can use the built-in LowLevelCallable to make callbacks!
+try:
+    from scipy import LowLevelCallable
+    LLC_EXISTS = True
+except:
+    LLC_EXISTS = False
+
 def get_delta0(tc, bcs=1.76):
     "Calculate delta0 from Tc and a custom value of the BCS constant."
     return bcs*sc.k*tc/sc.e
@@ -204,10 +211,14 @@ def wrap_for_numba(func):
     #Use numba to create a c-callback
     new_cfunc = numba.cfunc(c_sig)(c_func)
 
-    #This is a hack to address a bug in scipy.integrate.quad
-    new_cfunc.ctypes.argtypes = (ct.c_int, ct.c_double)
+    if LLC_EXISTS == True:
+        return LowLevelCallable(new_cfunc.ctypes)
+    else:
+        warnings.warn("Falling back on legacy scipy behavior. Should upgrade to verion 0.19 or greater.", DeprecationWarning)
+        #This is a hack to address a bug in scipy.integrate.quad
+        new_cfunc.ctypes.argtypes = (ct.c_int, ct.c_double)
 
-    #This is because for some ungodly reason numba doesn't include this...
-    new_cfunc.ctypes.__name__ = new_cfunc.__name__
+        #This is because for some ungodly reason numba doesn't include this...
+        new_cfunc.ctypes.__name__ = new_cfunc.__name__
 
-    return new_cfunc
+        return new_cfunc.ctypes

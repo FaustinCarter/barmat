@@ -4,7 +4,7 @@ import math as ma
 
 import numba
 
-@numba.jit("float64(float64, float64, float64)")
+@numba.jit("float64(float64, float64, float64)", nopython=True)
 def intR(a, b, x):
     r"""Calculate the R integral from Popel divided by x, (x = q*L0, L0 = zero-temp London depth).
 
@@ -46,7 +46,7 @@ def intR(a, b, x):
 
     return r
 
-@numba.jit("float64(float64, float64, float64)")
+@numba.jit("float64(float64, float64, float64)", nopython=True)
 def intS(a, b, x):
     r"""Calculate the R integral from Popel divided by x, (x = q*L0, L0 = zero-temp London depth).
 
