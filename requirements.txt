@@ -1,4 +1,5 @@
 #####Stricter version requirements than setup.py#####
 numpy >= 1.5
+scipy >= 0.19
 
 #####Packages that provide some extra utility, but aren't required#####

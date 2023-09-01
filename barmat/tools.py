@@ -1,19 +1,12 @@
 # coding=utf-8
-from __future__ import division
 import warnings
 
 import numba
 import scipy.integrate as sint
 import scipy.constants as sc
+from scipy import LowLevelCallable
 import ctypes as ct
 import pprint
-
-#As of scipy 0.19, can use the built-in LowLevelCallable to make callbacks!
-try:
-    from scipy import LowLevelCallable
-    LLC_EXISTS = True
-except:
-    LLC_EXISTS = False
 
 def get_delta0(tc, bcs=1.76):
     "Calculate delta0 from Tc and a custom value of the BCS constant."
@@ -101,15 +94,15 @@ def init_from_physical_data(tc, vf, london0, mfp, bcs=1.76, ksi0=None, delta0=No
 
     if verbose > 1:
         if ksi0_calc is not None:
-            print "calculated ksi0 = " + str(ksi0_calc*1e9)+" nm"
-            print "supplied ksi0 = " + str(ksi0*1e9)+" nm"
+            print("calculated ksi0 = " + str(ksi0_calc*1e9)+" nm")
+            print("supplied ksi0 = " + str(ksi0*1e9)+" nm")
         else:
-            print "calculated ksi0 = " + str(ksi0*1e9)+" nm"
+            print("calculated ksi0 = " + str(ksi0*1e9)+" nm")
 
-        print "calculated delta0 = " + str(delta0*1e6) + " ueV"
-        print "xk = ksi0/london0 = " + str(xk)
-        print "xm = mfp/london0 = " + str(xm)
-        print "xk/xm = ksi0/mfp = " + str(xk/xm)
+        print("calculated delta0 = " + str(delta0*1e6) + " ueV")
+        print("xk = ksi0/london0 = " + str(xk))
+        print("xm = mfp/london0 = " + str(xm))
+        print("xk/xm = ksi0/mfp = " + str(xk/xm))
 
     output_dict = {'bcs':bcs,
                     'vf':vf,
@@ -152,13 +145,13 @@ def do_integral(int_fun, a, b, iargs=None, **kwargs):
                     func_name = 'Unknown name'
 
             if verbose > 0:
-                print func_name
+                print(func_name)
                 if extra_info is not None:
-                    print extra_info
+                    print(extra_info)
                 if iargs is not None:
-                    print "iargs = ", iargs
-                print result, result_err
-                print error_msg
+                    print("iargs = ", iargs)
+                print(result, result_err)
+                print(error_msg)
                 if verbose > 1:
                     pprint.pprint(output_dict)
 
@@ -166,8 +159,6 @@ def do_integral(int_fun, a, b, iargs=None, **kwargs):
 
 def wrap_for_numba(func):
     """Uses numba to create a C-callback out of a function.
-    Also includes a hack to fix a bug in the way SciPy parses input args in quad.
-    This will probably break in future versions of SciPy.
 
     Parameters
     ----------
@@ -211,14 +202,4 @@ def wrap_for_numba(func):
     #Use numba to create a c-callback
     new_cfunc = numba.cfunc(c_sig)(c_func)
 
-    if LLC_EXISTS == True:
-        return LowLevelCallable(new_cfunc.ctypes)
-    else:
-        warnings.warn("Falling back on legacy scipy behavior. Should upgrade to verion 0.19 or greater.", DeprecationWarning)
-        #This is a hack to address a bug in scipy.integrate.quad
-        new_cfunc.ctypes.argtypes = (ct.c_int, ct.c_double)
-
-        #This is because for some ungodly reason numba doesn't include this...
-        new_cfunc.ctypes.__name__ = new_cfunc.__name__
-
-        return new_cfunc.ctypes
+    return LowLevelCallable(new_cfunc.ctypes)

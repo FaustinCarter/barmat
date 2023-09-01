@@ -19,7 +19,7 @@ setup(
         'numpy',
         'scipy',
         'numba',
-        'pprint'
+        'joblib',
     ],
     classifiers = [
         'Development Status :: 4 - Beta',

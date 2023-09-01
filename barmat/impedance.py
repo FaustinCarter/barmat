@@ -1,5 +1,4 @@
 # coding=utf-8
-from __future__ import division
 import cmath as cm
 import math as ma
 
@@ -158,7 +157,7 @@ def get_Zvec(input_vector, tc, vf, london0, axis='temperature', **kwargs):
                 #Convert physical data to params
                 params_dict = init_from_physical_data(tc, vf, london0, mfp, bcs)
 
-                #Add the parameters from physical data into the kwargs dict
+                # Add the parameters from physical data into the kwargs dict
                 zs_kwargs.update(params_dict)
 
                 #Calculate the next impedance
@@ -174,7 +173,7 @@ def get_Zvec(input_vector, tc, vf, london0, axis='temperature', **kwargs):
                 #Convert physical data to params
                 params_dict = init_from_physical_data(tc, vf, london0, mfp, bcs)
 
-                #Add the parameters from physical data into the kwargs dict
+                # Add the parameters from physical data into the kwargs dict
                 zs_kwargs.update(params_dict)
 
                 #Calculate the next impedance
@@ -191,7 +190,7 @@ def get_Zvec(input_vector, tc, vf, london0, axis='temperature', **kwargs):
         #Convert physical data to params
         params_dict = init_from_physical_data(tc, vf, london0, mfp, bcs)
 
-        #Add the parameters from physical data into the kwargs dict
+        # Add the parameters from physical data into the kwargs dict
         zs_kwargs.update(params_dict)
 
         if axis in ['temperature', 't']:
@@ -414,12 +413,12 @@ def cmplx_impedance(tr, fr, tc, xk, xm, vf, **kwargs):
     Zerr *= prefactor*1j
 
     if verbose > 0:
-        print "Z = %s %s" % (Z, units)
+        print("Z = %s %s" % (Z, units))
         if (Z.real == 0) and (Z.imag == 0):
-            print "No error, identically zero"
+            print("No error, identically zero")
         else:
-            print "fractional error in real part:", Zerr.real/abs(Z.real)
-            print "fractional error in imag part:", Zerr.imag/abs(Z.imag)
-        print "\n"
+            print("fractional error in real part:", Zerr.real/abs(Z.real))
+            print("fractional error in imag part:", Zerr.imag/abs(Z.imag))
+        print("\n")
 
     return Z
