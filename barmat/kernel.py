@@ -1,5 +1,4 @@
 # coding=utf-8
-from __future__ import division
 import math as ma
 
 import numba
@@ -393,12 +392,12 @@ def cmplx_kernel(tr, fr, x, xk, xm, dr, bcs, verbose=0):
 
 
 #         if verbose:
-#             print 'x = '+str(x)+'\n'
-#             print 'prefactor = '+str(prefactor)+'\n'
-#             print 'First reK integral = '+str(reKl1)+' +/- '+str(reKl1err) + '\n'
-#             print 'Second reK integral = '+str(reKl2)+' +/- '+str(reKl2err) + '\n'
-#             print 'Third reK integral = '+str(reKl3)+' +/- '+str(reKl3err) + '\n'
-#             print 'First imK integral = '+str(imKl1)+' +/- '+str(imKl1err) + '\n'
-#             print 'Second imK integral = '+str(imKl2)+' +/- '+str(imKl2err) + '\n'
+#             print('x = '+str(x)+'\n')
+#             print('prefactor = '+str(prefactor)+'\n')
+#             print('First reK integral = '+str(reKl1)+' +/- '+str(reKl1err) + '\n')
+#             print('Second reK integral = '+str(reKl2)+' +/- '+str(reKl2err) + '\n')
+#             print('Third reK integral = '+str(reKl3)+' +/- '+str(reKl3err) + '\n')
+#             print('First imK integral = '+str(imKl1)+' +/- '+str(imKl1err) + '\n')
+#             print('Second imK integral = '+str(imKl2)+' +/- '+str(imKl2err) + '\n')
 
     return prefactor*(reKl+1j*imKl)

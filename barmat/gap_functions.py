@@ -1,5 +1,4 @@
 # coding=utf-8
-from __future__ import division
 import math as ma
 
 import scipy.interpolate as si
